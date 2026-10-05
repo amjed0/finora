@@ -123,13 +123,13 @@ export const FinanceProvider = ({ children }) => {
     fetchFromServer(userId);
   }, [currentUser?.id]);
 
-  // Auto-sync: Poll server every 30 seconds for live cross-device updates
+  // Auto-sync: Poll server every 5 seconds for live cross-device updates
   useEffect(() => {
     if (!currentUser?.id) return;
 
     const intervalId = setInterval(() => {
       fetchFromServer(currentUser.id);
-    }, 30000); // 30 seconds
+    }, 5000); // 5 seconds — near-instant live sync
 
     return () => clearInterval(intervalId);
   }, [currentUser?.id]);
