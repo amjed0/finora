@@ -48,6 +48,34 @@ export const FinanceProvider = ({ children }) => {
 
   const [mongoConnected, setMongoConnected] = useState(false);
 
+  // Fetch all data from MongoDB server
+  const fetchFromServer = async (userId) => {
+    if (!userId) return;
+    try {
+      const [dbTx, dbCredits, dbBudgets, dbGoals] = await Promise.all([
+        api.getTransactions(userId).catch(() => null),
+        api.getCredits(userId).catch(() => null),
+        api.getBudgets(userId).catch(() => null),
+        api.getGoals(userId).catch(() => null)
+      ]);
+
+      if (dbTx && Array.isArray(dbTx)) {
+        setTransactions(dbTx.map(t => ({ ...t, id: t._id || t.id })));
+      }
+      if (dbCredits && Array.isArray(dbCredits)) {
+        setCredits(dbCredits.map(c => ({ ...c, id: c._id || c.id })));
+      }
+      if (dbBudgets && Array.isArray(dbBudgets)) {
+        setBudgets(dbBudgets.map(b => ({ ...b, id: b._id || b.id, monthlyLimit: b.limit || b.monthlyLimit })));
+      }
+      if (dbGoals && Array.isArray(dbGoals)) {
+        setGoals(dbGoals.map(g => ({ ...g, id: g._id || g.id })));
+      }
+    } catch (e) {
+      console.warn('Server sync failed, using local data:', e.message);
+    }
+  };
+
   // Load User Data whenever currentUser changes
   useEffect(() => {
     if (!currentUser) {
@@ -61,6 +89,7 @@ export const FinanceProvider = ({ children }) => {
     const userId = currentUser.id;
     const isDemo = userId === 'usr_demo_123' || currentUser.email === 'alex@finora.io';
 
+    // Load from localStorage first (instant display)
     const savedTx = localStorage.getItem(`finora_tx_${userId}`);
     const savedCredits = localStorage.getItem(`finora_credits_${userId}`);
     const savedBudgets = localStorage.getItem(`finora_budgets_${userId}`);
@@ -90,26 +119,39 @@ export const FinanceProvider = ({ children }) => {
       setGoals(isDemo ? INITIAL_GOALS : []);
     }
 
-    // Attempt loading from MongoDB backend
-    Promise.all([
-      api.getTransactions(userId).catch(() => null),
-      api.getCredits(userId).catch(() => null),
-      api.getBudgets(userId).catch(() => null),
-      api.getGoals(userId).catch(() => null)
-    ]).then(([dbTx, dbCredits, dbBudgets, dbGoals]) => {
-      if (dbTx && Array.isArray(dbTx) && dbTx.length > 0) {
-        setTransactions(dbTx.map(t => ({ ...t, id: t._id || t.id })));
+    // Then fetch latest from MongoDB (overrides localStorage with fresh server data)
+    fetchFromServer(userId);
+  }, [currentUser?.id]);
+
+  // Auto-sync: Poll server every 30 seconds for live cross-device updates
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const intervalId = setInterval(() => {
+      fetchFromServer(currentUser.id);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [currentUser?.id]);
+
+  // Instant sync when user switches back to tab (e.g., from desktop to mobile)
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchFromServer(currentUser.id);
       }
-      if (dbCredits && Array.isArray(dbCredits) && dbCredits.length > 0) {
-        setCredits(dbCredits.map(c => ({ ...c, id: c._id || c.id })));
-      }
-      if (dbBudgets && Array.isArray(dbBudgets) && dbBudgets.length > 0) {
-        setBudgets(dbBudgets.map(b => ({ ...b, id: b._id || b.id, monthlyLimit: b.limit || b.monthlyLimit })));
-      }
-      if (dbGoals && Array.isArray(dbGoals) && dbGoals.length > 0) {
-        setGoals(dbGoals.map(g => ({ ...g, id: g._id || g.id })));
-      }
-    });
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    // Also sync when window regains focus (covers mobile browser switching)
+    window.addEventListener('focus', () => fetchFromServer(currentUser.id));
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', () => fetchFromServer(currentUser.id));
+    };
   }, [currentUser?.id]);
 
   // Check MongoDB Backend Health on mount
