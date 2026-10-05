@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { CURRENCIES } from '../constants/initialData';
-import { Sun, Moon, Plus, Wallet, LogOut, User, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Plus, Wallet, LogOut, User, ChevronDown, Settings } from 'lucide-react';
 
 export default function Navbar() {
   const {
     activeTab,
+    setActiveTab,
     currency,
     setCurrency,
     theme,
@@ -21,13 +22,13 @@ export default function Navbar() {
   const getTitle = () => {
     switch (activeTab) {
       case 'dashboard':
-        return 'Financial Overview';
+        return 'Overview';
       case 'transactions':
         return 'Incomes & Expenses';
       case 'credits':
-        return 'Borrowing (Debit) & Lending (Credit) Manager';
+        return 'Borrow & Lend';
       case 'budgets':
-        return 'Budgets & Savings Goals';
+        return 'Budgets & Goals';
       case 'settings':
         return 'Settings & Profile';
       default:
@@ -37,19 +38,19 @@ export default function Navbar() {
 
   return (
     <header className="top-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
         <div
           className="mobile-only"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            flexShrink: 0
           }}
         >
           <div
             style={{
-              width: '32px',
-              height: '32px',
+              width: '28px',
+              height: '28px',
               borderRadius: '8px',
               background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
               display: 'flex',
@@ -58,14 +59,13 @@ export default function Navbar() {
               color: '#fff'
             }}
           >
-            <Wallet size={18} />
+            <Wallet size={16} />
           </div>
         </div>
         <h1 className="top-header-title">{getTitle()}</h1>
       </div>
 
       <div className="top-header-actions">
-
         {/* Currency Switcher Dropdown */}
         <select
           value={currency.code}
@@ -75,7 +75,7 @@ export default function Navbar() {
           }}
           className="form-select"
           style={{
-            padding: '6px 12px',
+            padding: '6px 8px',
             fontSize: '0.85rem',
             width: 'auto',
             minHeight: '36px',
@@ -85,7 +85,7 @@ export default function Navbar() {
         >
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>
-              {c.symbol} ({c.code})
+              {c.symbol} {c.code}
             </option>
           ))}
         </select>
@@ -93,25 +93,25 @@ export default function Navbar() {
         {/* Theme Toggle Button */}
         <button
           className="btn btn-secondary btn-icon"
-          style={{ width: '38px', height: '38px' }}
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title="Toggle Dark/Light Mode"
         >
-          {theme === 'dark' ? <Sun size={18} color="#facc15" /> : <Moon size={18} color="#6366f1" />}
+          {theme === 'dark' ? <Sun size={17} color="#facc15" /> : <Moon size={17} color="#6366f1" />}
         </button>
 
         {/* Header Action Button for Quick Add */}
         <button
           className="btn btn-primary"
           style={{
-            padding: '8px 14px',
+            padding: '8px 12px',
             fontSize: '0.85rem',
-            minHeight: '38px'
+            minHeight: '36px'
           }}
           onClick={() => {
             setEditingTx(null);
             setIsTxModalOpen(true);
           }}
+          title="Add Income / Expense"
         >
           <Plus size={16} />
           <span className="desktop-only">New Entry</span>
@@ -125,10 +125,10 @@ export default function Navbar() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid var(--border-color)',
-                padding: '4px 10px 4px 6px',
+                padding: '4px 8px 4px 5px',
                 borderRadius: 'var(--radius-full)',
                 cursor: 'pointer',
                 color: 'var(--text-primary)',
@@ -139,8 +139,8 @@ export default function Navbar() {
                 src={currentUser.avatar}
                 alt={currentUser.name}
                 style={{
-                  width: '28px',
-                  height: '28px',
+                  width: '26px',
+                  height: '26px',
                   borderRadius: '50%',
                   objectFit: 'cover'
                 }}
@@ -152,7 +152,7 @@ export default function Navbar() {
               <span style={{ fontSize: '0.85rem', fontWeight: 600 }} className="desktop-only">
                 {currentUser.name.split(' ')[0]}
               </span>
-              <ChevronDown size={14} color="var(--text-muted)" />
+              <ChevronDown size={13} color="var(--text-muted)" />
             </button>
 
             {/* Profile Dropdown Menu */}
@@ -194,6 +194,31 @@ export default function Navbar() {
                     {currentUser.role || 'Member'}
                   </div>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    setActiveTab('settings');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '8px 10px',
+                    border: 'none',
+                    background: activeTab === 'settings' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.08)',
+                    color: '#8b5cf6',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    marginBottom: '8px'
+                  }}
+                >
+                  <Settings size={16} />
+                  <span>Settings & Profile</span>
+                </button>
 
                 <button
                   onClick={() => {

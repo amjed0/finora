@@ -5,59 +5,37 @@ import {
   ArrowUpDown,
   HandCoins,
   PieChart,
-  Settings,
-  Plus
+  Settings
 } from 'lucide-react';
 
 export default function MobileBottomNav() {
-  const { activeTab, setActiveTab, setIsTxModalOpen, setEditingTx } = useFinance();
+  const { activeTab, setActiveTab } = useFinance();
+
+  const navItems = [
+    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+    { id: 'transactions', label: 'Income/Exp', icon: ArrowUpDown },
+    { id: 'credits', label: 'Borrow/Lend', icon: HandCoins },
+    { id: 'budgets', label: 'Budgets', icon: PieChart },
+    { id: 'settings', label: 'Settings', icon: Settings }
+  ];
 
   return (
     <nav className="mobile-bottom-nav">
-      <button
-        className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-        onClick={() => setActiveTab('dashboard')}
-      >
-        <LayoutDashboard size={20} />
-        <span>Home</span>
-      </button>
-
-      <button
-        className={`mobile-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
-        onClick={() => setActiveTab('transactions')}
-      >
-        <ArrowUpDown size={20} />
-        <span>Income/Exp</span>
-      </button>
-
-      <div className="mobile-fab-container">
-        <button
-          className="mobile-fab"
-          aria-label="Add Record"
-          onClick={() => {
-            setEditingTx(null);
-            setIsTxModalOpen(true);
-          }}
-        >
-          <Plus size={26} />
-        </button>
-      </div>
-
-      <button
-        className={`mobile-nav-item ${activeTab === 'credits' ? 'active' : ''}`}
-        onClick={() => setActiveTab('credits')}
-      >
-        <HandCoins size={20} />
-        <span>Borrow/Lend</span>
-      </button>
-
-      <button
-        className={`mobile-nav-item ${activeTab === 'budgets' ? 'active' : ''}`}
-        onClick={() => setActiveTab('budgets')}
-      >
-        <PieChart size={20} />
-        <span>Budgets</span>
-      </button>
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = activeTab === item.id;
+        return (
+          <button
+            key={item.id}
+            className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setActiveTab(item.id)}
+            title={item.label}
+          >
+            <Icon size={19} />
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
