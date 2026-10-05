@@ -4,38 +4,62 @@ import {
   LayoutDashboard,
   ArrowUpDown,
   HandCoins,
-  PieChart,
-  Settings
+  Settings,
+  Plus
 } from 'lucide-react';
 
 export default function MobileBottomNav() {
-  const { activeTab, setActiveTab } = useFinance();
-
-  const navItems = [
-    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
-    { id: 'transactions', label: 'Income/Exp', icon: ArrowUpDown },
-    { id: 'credits', label: 'Borrow/Lend', icon: HandCoins },
-    { id: 'budgets', label: 'Budgets', icon: PieChart },
-    { id: 'settings', label: 'Settings', icon: Settings }
-  ];
+  const { activeTab, setActiveTab, setIsTxModalOpen, setEditingTx } = useFinance();
 
   return (
     <nav className="mobile-bottom-nav">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = activeTab === item.id;
-        return (
-          <button
-            key={item.id}
-            className={`mobile-nav-item ${isActive ? 'active' : ''}`}
-            onClick={() => setActiveTab(item.id)}
-            title={item.label}
-          >
-            <Icon size={19} />
-            <span>{item.label}</span>
-          </button>
-        );
-      })}
+      <button
+        className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+        onClick={() => setActiveTab('dashboard')}
+      >
+        <LayoutDashboard size={19} />
+        <span>Home</span>
+      </button>
+
+      <button
+        className={`mobile-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
+        onClick={() => setActiveTab('transactions')}
+      >
+        <ArrowUpDown size={19} />
+        <span>Incomes</span>
+      </button>
+
+      {/* Center Elevated Hump Floating Action Button for New Entry */}
+      <div className="mobile-fab-container">
+        <button
+          className="mobile-fab"
+          aria-label="Add Income or Expense"
+          title="Add New Entry"
+          onClick={() => {
+            setEditingTx(null);
+            setIsTxModalOpen(true);
+          }}
+        >
+          <Plus size={24} strokeWidth={2.5} />
+        </button>
+        <span className="mobile-fab-label">Add</span>
+      </div>
+
+      <button
+        className={`mobile-nav-item ${activeTab === 'credits' ? 'active' : ''}`}
+        onClick={() => setActiveTab('credits')}
+      >
+        <HandCoins size={19} />
+        <span>Borrow/Lend</span>
+      </button>
+
+      <button
+        className={`mobile-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+        onClick={() => setActiveTab('settings')}
+      >
+        <Settings size={19} />
+        <span>Settings</span>
+      </button>
     </nav>
   );
 }

@@ -44,6 +44,8 @@ export const FinanceProvider = ({ children }) => {
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   const [mongoConnected, setMongoConnected] = useState(false);
 
   // Load User Data whenever currentUser changes
@@ -501,7 +503,9 @@ export const FinanceProvider = ({ children }) => {
         isGoalModalOpen,
         setIsGoalModalOpen,
         editingGoal,
-        setEditingGoal
+        setEditingGoal,
+        isMobileSidebarOpen,
+        setIsMobileSidebarOpen
       }}
     >
       {children}
