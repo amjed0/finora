@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { CURRENCIES } from '../constants/initialData';
-import { Sun, Moon, Plus, Wallet, LogOut, User, ChevronDown, Settings, Menu } from 'lucide-react';
+import { Sun, Moon, Plus, Wallet, LogOut, User, ChevronDown, Settings } from 'lucide-react';
 
 export default function Navbar() {
   const {
@@ -13,8 +13,7 @@ export default function Navbar() {
     theme,
     setTheme,
     setIsTxModalOpen,
-    setEditingTx,
-    setIsMobileSidebarOpen
+    setEditingTx
   } = useFinance();
 
   const { currentUser, logout } = useAuth();
@@ -40,15 +39,22 @@ export default function Navbar() {
   return (
     <header className="top-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-        {/* Mobile Hamburger Drawer Button */}
-        <button
-          className="mobile-only btn btn-secondary btn-icon"
-          style={{ width: '34px', height: '34px', padding: 0, flexShrink: 0 }}
-          onClick={() => setIsMobileSidebarOpen(true)}
-          title="Open Menu"
+        <div
+          className="mobile-only"
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            flexShrink: 0
+          }}
         >
-          <Menu size={18} />
-        </button>
+          <Wallet size={16} />
+        </div>
 
         <h1 className="top-header-title">{getTitle()}</h1>
       </div>

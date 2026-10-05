@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   ArrowUpDown,
   HandCoins,
-  Settings,
+  PieChart,
   Plus
 } from 'lucide-react';
 
@@ -54,11 +54,11 @@ export default function MobileBottomNav() {
       </button>
 
       <button
-        className={`mobile-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-        onClick={() => setActiveTab('settings')}
+        className={`mobile-nav-item ${activeTab === 'budgets' ? 'active' : ''}`}
+        onClick={() => setActiveTab('budgets')}
       >
-        <Settings size={19} />
-        <span>Settings</span>
+        <PieChart size={19} />
+        <span>Budgets</span>
       </button>
     </nav>
   );
