@@ -93,9 +93,9 @@ export default function Navbar() {
           {theme === 'dark' ? <Sun size={17} color="#facc15" /> : <Moon size={17} color="#6366f1" />}
         </button>
 
-        {/* Header Action Button for Quick Add */}
+        {/* Header Action Button for Quick Add (Desktop only) */}
         <button
-          className="btn btn-primary"
+          className="btn btn-primary desktop-only"
           style={{
             padding: '8px 12px',
             fontSize: '0.85rem',
@@ -108,7 +108,7 @@ export default function Navbar() {
           title="Add Income / Expense"
         >
           <Plus size={16} />
-          <span className="desktop-only">New Entry</span>
+          <span>New Entry</span>
         </button>
 
         {/* User Profile Pill & Dropdown */}
