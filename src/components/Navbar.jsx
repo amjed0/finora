@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { CURRENCIES } from '../constants/initialData';
@@ -18,6 +18,26 @@ export default function Navbar() {
 
   const { currentUser, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  // Close profile dropdown when clicking or touching anywhere outside
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('touchstart', handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [showProfileMenu]);
 
   const getTitle = () => {
     switch (activeTab) {
@@ -113,7 +133,7 @@ export default function Navbar() {
 
         {/* User Profile Pill & Dropdown */}
         {currentUser && (
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} ref={profileMenuRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               style={{

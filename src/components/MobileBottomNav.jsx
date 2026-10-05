@@ -26,7 +26,7 @@ export default function MobileBottomNav() {
         onClick={() => setActiveTab('transactions')}
       >
         <ArrowUpDown size={19} />
-        <span>Incomes</span>
+        <span>Inc/Exp</span>
       </button>
 
       {/* Center Elevated Hump Floating Action Button for New Entry */}
