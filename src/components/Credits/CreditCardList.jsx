@@ -16,7 +16,11 @@ import {
   AlertCircle,
   FileText,
   Landmark,
-  Wallet
+  Wallet,
+  Ticket,
+  Trophy,
+  CheckCircle2,
+  Coins
 } from 'lucide-react';
 
 export default function CreditCardList() {
@@ -31,22 +35,34 @@ export default function CreditCardList() {
     totalBorrowedBalance,
     totalLentBalance,
     totalAssetBalance,
+    totalChittyBalance,
+    totalChittyPool,
+    chittyAccounts,
+    logChittyInstallment,
+    claimChittyPrize,
     netWorth,
     netBorrowLendPosition,
     totalCreditLimit,
     totalCreditUtilization
   } = useFinance();
 
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'borrowing' | 'lending' | 'asset'
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'borrowing' | 'lending' | 'asset' | 'chitty'
+  const [claimModalAccount, setClaimModalAccount] = useState(null);
+  const [claimPrizeAmount, setClaimPrizeAmount] = useState('');
+  const [claimDrawNumber, setClaimDrawNumber] = useState('');
 
-  const borrowedAccounts = credits.filter((c) => c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset'));
+  const borrowedAccounts = credits.filter(
+    (c) => c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset' && c.category !== 'chitty')
+  );
   const lendingAccounts = credits.filter((c) => c.category === 'lending');
   const assetAccounts = credits.filter((c) => c.category === 'asset');
+  const chitAccounts = credits.filter((c) => c.category === 'chitty');
 
   const filteredAccounts = credits.filter((c) => {
-    if (activeFilter === 'borrowing') return c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset');
+    if (activeFilter === 'borrowing') return c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset' && c.category !== 'chitty');
     if (activeFilter === 'lending') return c.category === 'lending';
     if (activeFilter === 'asset') return c.category === 'asset';
+    if (activeFilter === 'chitty') return c.category === 'chitty';
     return true;
   });
 
@@ -62,7 +78,25 @@ export default function CreditCardList() {
       };
       return typeMap[account.type] || 'Asset';
     }
+    if (account.category === 'chitty') {
+      return 'Chit Fund';
+    }
     return '';
+  };
+
+  const handleOpenClaimModal = (account) => {
+    setClaimModalAccount(account);
+    setClaimPrizeAmount(account.chittyAmount || account.limit || '');
+    setClaimDrawNumber((account.paidDraws || 1).toString());
+  };
+
+  const handleClaimSubmit = (e) => {
+    e.preventDefault();
+    if (!claimModalAccount) return;
+    claimChittyPrize(claimModalAccount.id, claimPrizeAmount, claimDrawNumber);
+    setClaimModalAccount(null);
+    setClaimPrizeAmount('');
+    setClaimDrawNumber('');
   };
 
   return (
@@ -95,10 +129,12 @@ export default function CreditCardList() {
               >
                 <HandCoins size={20} />
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Borrowing (Debit), Lending (Credit) & Assets</h2>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+                Borrowing, Lending, Assets & Chitty
+              </h2>
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Manage debts, receivables, investments, savings, and property holdings in one place
+              Manage debts, receivables, investments, savings, property holdings, and chit funds in one place
             </p>
           </div>
 
@@ -114,12 +150,12 @@ export default function CreditCardList() {
           </button>
         </div>
 
-        {/* 4 Summary Metric Cards */}
+        {/* 5 Summary Metric Cards */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '14px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '12px',
             marginBottom: '20px'
           }}
         >
@@ -138,7 +174,7 @@ export default function CreditCardList() {
               </span>
               <ArrowDownLeft size={16} color="#f43f5e" />
             </div>
-            <div className="amount-font text-expense" style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+            <div className="amount-font text-expense" style={{ fontSize: '1.3rem', fontWeight: 800 }}>
               {formatCurrency(totalBorrowedBalance)}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -161,11 +197,11 @@ export default function CreditCardList() {
               </span>
               <ArrowUpRight size={16} color="#06b6d4" />
             </div>
-            <div className="amount-font text-cyan" style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+            <div className="amount-font text-cyan" style={{ fontSize: '1.3rem', fontWeight: 800 }}>
               {formatCurrency(totalLentBalance)}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              {lendingAccounts.length} receivable(s) to collect
+              {lendingAccounts.length} receivable(s)
             </div>
           </div>
 
@@ -184,11 +220,34 @@ export default function CreditCardList() {
               </span>
               <Landmark size={16} color="#10b981" />
             </div>
-            <div className="amount-font text-income" style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+            <div className="amount-font text-income" style={{ fontSize: '1.3rem', fontWeight: 800 }}>
               {formatCurrency(totalAssetBalance)}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
               {assetAccounts.length} asset account(s)
+            </div>
+          </div>
+
+          {/* Total Chitty Invested */}
+          <div
+            style={{
+              background: 'rgba(234, 179, 8, 0.08)',
+              border: '1px solid rgba(234, 179, 8, 0.25)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#eab308' }}>
+                🎟️ CHITTY (SAVED)
+              </span>
+              <Ticket size={16} color="#eab308" />
+            </div>
+            <div className="amount-font" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#eab308' }}>
+              {formatCurrency(totalChittyBalance)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {chitAccounts.length} active chitty fund(s)
             </div>
           </div>
 
@@ -215,7 +274,7 @@ export default function CreditCardList() {
             <div
               className="amount-font"
               style={{
-                fontSize: '1.4rem',
+                fontSize: '1.3rem',
                 fontWeight: 800,
                 color: netWorth >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'
               }}
@@ -223,7 +282,7 @@ export default function CreditCardList() {
               {formatCurrency(Math.abs(netWorth))}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Assets + Receivables − Debts
+              Assets + Chitty + Lent − Debts
             </div>
           </div>
         </div>
@@ -265,7 +324,7 @@ export default function CreditCardList() {
 
       {/* Filter Tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div className="auth-tabs-switcher" style={{ margin: 0, minWidth: '320px' }}>
+        <div className="auth-tabs-switcher" style={{ margin: 0, minWidth: '320px', gridTemplateColumns: 'repeat(5, 1fr)' }}>
           <button
             className={`auth-tab-btn ${activeFilter === 'all' ? 'active' : ''}`}
             onClick={() => setActiveFilter('all')}
@@ -290,6 +349,12 @@ export default function CreditCardList() {
           >
             🏦 Assets ({assetAccounts.length})
           </button>
+          <button
+            className={`auth-tab-btn ${activeFilter === 'chitty' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('chitty')}
+          >
+            🎟️ Chitty ({chitAccounts.length})
+          </button>
         </div>
       </div>
 
@@ -299,20 +364,28 @@ export default function CreditCardList() {
           <HandCoins size={44} style={{ marginBottom: '12px', opacity: 0.5 }} />
           <p style={{ fontWeight: 600, fontSize: '1rem' }}>No records found under this filter.</p>
           <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>
-            Click "Add Record" above to start tracking debts, receivables, or assets.
+            Click "Add Record" above to start tracking debts, receivables, assets, or chitty funds.
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
           {filteredAccounts.map((account) => {
             const isLending = account.category === 'lending';
             const isAsset = account.category === 'asset';
-            const isBorrowing = !isLending && !isAsset;
-            const originalAmount = account.limit || account.balance;
+            const isChitty = account.category === 'chitty';
+            const isBorrowing = !isLending && !isAsset && !isChitty;
 
-            // Progress: for borrowing/lending = how much cleared; for assets = growth vs original cost
+            const originalAmount = isChitty
+              ? (account.chittyAmount || account.limit || account.balance)
+              : (account.limit || account.balance);
+
+            // Progress logic
             let progress = 0;
-            if (isAsset) {
+            if (isChitty) {
+              const totalD = account.totalDraws || 1;
+              const paidD = account.paidDraws || 0;
+              progress = (paidD / totalD) * 100;
+            } else if (isAsset) {
               progress = originalAmount > 0 ? ((account.balance - originalAmount) / originalAmount) * 100 : 0;
             } else {
               progress = originalAmount > 0 ? ((originalAmount - account.balance) / originalAmount) * 100 : 0;
@@ -326,6 +399,7 @@ export default function CreditCardList() {
             let barColor = '#10b981';
             let actionLabel = 'Log Debt Paydown';
             let btnGradient = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+            let topBorderColor = account.color || '#f43f5e';
 
             if (isLending) {
               badgeClass = 'badge-income';
@@ -335,6 +409,7 @@ export default function CreditCardList() {
               barColor = '#06b6d4';
               actionLabel = 'Log Repayment Collection';
               btnGradient = 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)';
+              topBorderColor = account.color || '#06b6d4';
             } else if (isAsset) {
               badgeClass = 'badge-income';
               badgeText = '🏦 ASSET (HOLDING)';
@@ -343,6 +418,16 @@ export default function CreditCardList() {
               barColor = '#10b981';
               actionLabel = 'Update Asset Value';
               btnGradient = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+              topBorderColor = account.color || '#10b981';
+            } else if (isChitty) {
+              badgeClass = 'badge-credit';
+              badgeText = '🎟️ CHITTY (CHIT FUND)';
+              balanceLabel = 'Total Invested / Paid in Chitty';
+              balanceColor = '#eab308';
+              barColor = '#eab308';
+              actionLabel = 'Pay Next Installment';
+              btnGradient = 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)';
+              topBorderColor = account.color || '#eab308';
             }
 
             return (
@@ -352,14 +437,14 @@ export default function CreditCardList() {
                 style={{
                   position: 'relative',
                   overflow: 'hidden',
-                  borderTop: `4px solid ${account.color || (isAsset ? '#10b981' : isLending ? '#06b6d4' : '#f43f5e')}`
+                  borderTop: `4px solid ${topBorderColor}`
                 }}
               >
                 {/* Top Badge & Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                      <span className={`badge ${badgeClass}`}>
+                      <span className={`badge ${badgeClass}`} style={isChitty ? { background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', borderColor: 'rgba(234, 179, 8, 0.3)' } : {}}>
                         {badgeText}
                       </span>
                       {isAsset && account.type && (
@@ -367,11 +452,23 @@ export default function CreditCardList() {
                           {getTypeBadgeLabel(account)}
                         </span>
                       )}
+                      {isChitty && account.prizeWon && (
+                        <span className="badge badge-income" style={{ fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Trophy size={10} />
+                          Prize Won ({formatCurrency(account.prizeAmount)})
+                        </span>
+                      )}
                     </div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{account.name}</h3>
                     {account.entity && (
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                        {isAsset ? `Custodian: ${account.entity}` : isLending ? `Borrower: ${account.entity}` : `Creditor: ${account.entity}`}
+                        {isChitty
+                          ? `Organizer: ${account.entity}`
+                          : isAsset
+                          ? `Custodian: ${account.entity}`
+                          : isLending
+                          ? `Borrower: ${account.entity}`
+                          : `Creditor: ${account.entity}`}
                       </div>
                     )}
                   </div>
@@ -419,9 +516,17 @@ export default function CreditCardList() {
                 {/* Progress / Growth Bar */}
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    <span>{isAsset ? `Cost Basis: ${formatCurrency(originalAmount)}` : `Original: ${formatCurrency(originalAmount)}`}</span>
+                    <span>
+                      {isChitty
+                        ? `Pool Target: ${formatCurrency(originalAmount)}`
+                        : isAsset
+                        ? `Cost Basis: ${formatCurrency(originalAmount)}`
+                        : `Original: ${formatCurrency(originalAmount)}`}
+                    </span>
                     <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {isAsset
+                      {isChitty
+                        ? `${account.paidDraws || 0}/${account.totalDraws || '—'} Draws (${Math.min(100, Math.round(progress))}%)`
+                        : isAsset
                         ? (progress >= 0 ? `+${progress.toFixed(1)}% gain` : `${progress.toFixed(1)}% loss`)
                         : `${Math.max(0, progress).toFixed(0)}% cleared`}
                     </span>
@@ -430,9 +535,7 @@ export default function CreditCardList() {
                     <div
                       className="progress-bar-fill"
                       style={{
-                        width: isAsset
-                          ? `${Math.min(100, Math.max(0, (account.balance / Math.max(originalAmount, 1)) * 100))}%`
-                          : `${Math.min(100, Math.max(0, progress))}%`,
+                        width: `${Math.min(100, Math.max(0, progress))}%`,
                         background: barColor
                       }}
                     />
@@ -455,29 +558,70 @@ export default function CreditCardList() {
                 >
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>
-                      {isAsset ? 'Return / APY:' : 'Interest APR:'}
+                      {isChitty ? 'Installment / Draw:' : isAsset ? 'Return / APY:' : 'Interest APR:'}
                     </span>
                     <div style={{ fontWeight: 700 }}>
-                      {account.apr || 0}% {isAsset ? 'APY' : 'APR'}
+                      {isChitty
+                        ? formatCurrency(account.monthlyInstallment || account.minPayment || 0)
+                        : isAsset
+                        ? `${account.apr || 0}% APY`
+                        : `${account.apr || 0}% APR`}
                     </div>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>
-                      {isAsset ? 'Account #:' : isLending ? 'Installment:' : 'Min Monthly:'}
+                      {isChitty ? 'Chit Passbook #:' : isAsset ? 'Account #:' : isLending ? 'Installment:' : 'Min Monthly:'}
                     </span>
                     <div style={{ fontWeight: 700 }}>
-                      {isAsset
+                      {isChitty
+                        ? (account.accountNumber || '—')
+                        : isAsset
                         ? (account.accountNumber || '—')
                         : (account.minPayment ? formatCurrency(account.minPayment) : 'Flexible')}
                     </div>
                   </div>
                   {account.dueDate && (
                     <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', paddingTop: '4px' }}>
-                      <Calendar size={13} color="#8b5cf6" />
-                      <span>Due Date: {account.dueDate}</span>
+                      <Calendar size={13} color={isChitty ? '#eab308' : '#8b5cf6'} />
+                      <span>{isChitty ? 'Next Draw Date:' : 'Due Date:'} {account.dueDate}</span>
                     </div>
                   )}
                 </div>
+
+                {/* Chitty Prize Won / Bidding Status Box */}
+                {isChitty && (
+                  <div
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: account.prizeWon ? 'rgba(16, 185, 129, 0.1)' : 'rgba(234, 179, 8, 0.08)',
+                      border: `1px solid ${account.prizeWon ? 'rgba(16, 185, 129, 0.25)' : 'rgba(234, 179, 8, 0.2)'}`,
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '16px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Trophy size={14} color={account.prizeWon ? '#10b981' : '#eab308'} />
+                      <span>
+                        {account.prizeWon
+                          ? `Won on Draw #${account.prizeDrawNumber || '—'}: ${formatCurrency(account.prizeAmount)}`
+                          : 'Prize/Auction not yet claimed'}
+                      </span>
+                    </div>
+                    {!account.prizeWon && (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '3px 8px', fontSize: '0.7rem', color: '#eab308', borderColor: 'rgba(234, 179, 8, 0.4)' }}
+                        onClick={() => handleOpenClaimModal(account)}
+                      >
+                        Claim Prize
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {account.notes && (
                   <div
@@ -499,7 +643,29 @@ export default function CreditCardList() {
                 )}
 
                 {/* Primary Action Button */}
-                {isAsset ? (
+                {isChitty ? (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn-primary"
+                      style={{
+                        flex: 1,
+                        gap: '8px',
+                        background: btnGradient,
+                        color: '#000',
+                        fontWeight: 700
+                      }}
+                      disabled={(account.paidDraws || 0) >= (account.totalDraws || 999)}
+                      onClick={() => logChittyInstallment(account.id)}
+                    >
+                      <Coins size={16} />
+                      <span>
+                        {(account.paidDraws || 0) >= (account.totalDraws || 999)
+                          ? 'All Draws Paid ✅'
+                          : `Pay Draw #${(account.paidDraws || 0) + 1} (${formatCurrency(account.monthlyInstallment || account.minPayment || 0)})`}
+                      </span>
+                    </button>
+                  </div>
+                ) : isAsset ? (
                   <button
                     className="btn btn-primary"
                     style={{
@@ -535,6 +701,90 @@ export default function CreditCardList() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Claim Chitty Prize Modal */}
+      {claimModalAccount && (
+        <div className="modal-overlay" onClick={() => setClaimModalAccount(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: '#10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Trophy size={20} />
+                </div>
+                <h3 className="modal-title">Record Prize / Auction Won</h3>
+              </div>
+              <button className="btn btn-secondary btn-icon" onClick={() => setClaimModalAccount(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleClaimSubmit}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                Record prize/auction money won for <strong>{claimModalAccount.name}</strong>. This will mark the prize as won and automatically add an investment income transaction.
+              </p>
+
+              <div className="form-group">
+                <label className="form-label">Prize / Auction Amount Received *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="e.g. 42000"
+                  value={claimPrizeAmount}
+                  onChange={(e) => setClaimPrizeAmount(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Won on Draw Number (#) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  placeholder="e.g. 8"
+                  value={claimDrawNumber}
+                  onChange={(e) => setClaimDrawNumber(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setClaimModalAccount(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  }}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>Claim Prize</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

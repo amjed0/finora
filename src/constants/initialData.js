@@ -270,6 +270,28 @@ export const INITIAL_CREDITS = [
     accountNumber: 'Deed #RE-441',
     color: '#8b5cf6',
     notes: 'Home equity value estimate'
+  },
+  {
+    id: 'crd-10',
+    name: 'KSFE Monthly Gold Chitty',
+    category: 'chitty',
+    type: 'chitty_fund',
+    entity: 'KSFE Ltd.',
+    balance: 48000.00,
+    limit: 100000.00,
+    chittyAmount: 100000.00,
+    monthlyInstallment: 4000.00,
+    minPayment: 4000.00,
+    totalDraws: 25,
+    paidDraws: 12,
+    prizeWon: false,
+    prizeAmount: 0,
+    prizeDrawNumber: 0,
+    startDate: '2025-10-01',
+    dueDate: '2026-10-15',
+    accountNumber: 'Chit #K-8820',
+    color: '#eab308',
+    notes: '25-draw chit fund (12 months @ 2 draws/mo), ₹4,000 per draw'
   }
 ];
 

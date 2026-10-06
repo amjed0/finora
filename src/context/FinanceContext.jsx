@@ -222,15 +222,19 @@ export const FinanceProvider = ({ children }) => {
   const netBalance = totalIncome - totalExpense;
 
   // Portfolio & Asset Calculations
-  const borrowedAccounts = credits.filter((c) => c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset'));
+  const borrowedAccounts = credits.filter((c) => c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset' && c.category !== 'chitty'));
   const lendingAccounts = credits.filter((c) => c.category === 'lending');
   const assetAccounts = credits.filter((c) => c.category === 'asset');
+  const chittyAccounts = credits.filter((c) => c.category === 'chitty');
 
-  const totalBorrowedBalance = borrowedAccounts.reduce((sum, c) => sum + Number(c.balance), 0);
-  const totalLentBalance = lendingAccounts.reduce((sum, c) => sum + Number(c.balance), 0);
-  const totalAssetBalance = assetAccounts.reduce((sum, c) => sum + Number(c.balance), 0);
-  const totalAssetsCombined = totalAssetBalance + totalLentBalance;
-  // Net Worth includes Net Cash Balance (Incomes - Expenses) + Assets + Money Lent - Debts
+  const totalBorrowedBalance = borrowedAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
+  const totalLentBalance = lendingAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
+  const totalAssetBalance = assetAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
+  const totalChittyBalance = chittyAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
+  const totalChittyPool = chittyAccounts.reduce((sum, c) => sum + Number(c.chittyAmount || c.limit || 0), 0);
+
+  const totalAssetsCombined = totalAssetBalance + totalLentBalance + totalChittyBalance;
+  // Net Worth includes Net Cash Balance (Incomes - Expenses) + Assets + Money Lent + Chitty Investments - Debts
   const netWorth = netBalance + totalAssetsCombined - totalBorrowedBalance;
 
   const totalCreditLimit = borrowedAccounts.reduce((sum, c) => sum + Number(c.limit || 0), 0);
@@ -296,10 +300,18 @@ export const FinanceProvider = ({ children }) => {
       userId,
       id: creditData.id || `crd-${Date.now()}`,
       category: creditData.category || 'borrowing',
-      balance: parseFloat(creditData.balance),
-      limit: parseFloat(creditData.limit || creditData.balance),
+      balance: parseFloat(creditData.balance || 0),
+      limit: parseFloat(creditData.limit || creditData.chittyAmount || creditData.balance || 0),
       apr: parseFloat(creditData.apr || 0),
-      minPayment: parseFloat(creditData.minPayment || 0)
+      minPayment: parseFloat(creditData.minPayment || creditData.monthlyInstallment || 0),
+      chittyAmount: parseFloat(creditData.chittyAmount || creditData.limit || 0),
+      monthlyInstallment: parseFloat(creditData.monthlyInstallment || creditData.minPayment || 0),
+      totalDraws: parseInt(creditData.totalDraws || 0, 10),
+      paidDraws: parseInt(creditData.paidDraws || 0, 10),
+      prizeWon: Boolean(creditData.prizeWon),
+      prizeAmount: parseFloat(creditData.prizeAmount || 0),
+      prizeDrawNumber: parseInt(creditData.prizeDrawNumber || 0, 10),
+      startDate: creditData.startDate || ''
     };
 
     setCredits((prev) => [...prev, newCredit]);
@@ -321,10 +333,18 @@ export const FinanceProvider = ({ children }) => {
     const updatedObj = {
       ...creditData,
       category: creditData.category || 'borrowing',
-      balance: parseFloat(creditData.balance),
-      limit: parseFloat(creditData.limit || creditData.balance),
+      balance: parseFloat(creditData.balance || 0),
+      limit: parseFloat(creditData.limit || creditData.chittyAmount || creditData.balance || 0),
       apr: parseFloat(creditData.apr || 0),
-      minPayment: parseFloat(creditData.minPayment || 0)
+      minPayment: parseFloat(creditData.minPayment || creditData.monthlyInstallment || 0),
+      chittyAmount: parseFloat(creditData.chittyAmount || creditData.limit || 0),
+      monthlyInstallment: parseFloat(creditData.monthlyInstallment || creditData.minPayment || 0),
+      totalDraws: parseInt(creditData.totalDraws || 0, 10),
+      paidDraws: parseInt(creditData.paidDraws || 0, 10),
+      prizeWon: Boolean(creditData.prizeWon),
+      prizeAmount: parseFloat(creditData.prizeAmount || 0),
+      prizeDrawNumber: parseInt(creditData.prizeDrawNumber || 0, 10),
+      startDate: creditData.startDate || ''
     };
 
     setCredits((prev) =>
@@ -354,8 +374,29 @@ export const FinanceProvider = ({ children }) => {
     if (!targetCredit) return;
 
     const isLending = targetCredit.category === 'lending';
-    const newBal = Math.max(0, targetCredit.balance - payAmt);
+    const isChitty = targetCredit.category === 'chitty';
 
+    if (isChitty) {
+      const newPaidDraws = (targetCredit.paidDraws || 0) + 1;
+      const newBal = (targetCredit.balance || 0) + payAmt;
+      updateCreditAccount(creditId, {
+        ...targetCredit,
+        paidDraws: newPaidDraws,
+        balance: newBal
+      });
+
+      addTransaction({
+        description: `Chitty Installment - ${targetCredit.name} (Draw #${newPaidDraws})`,
+        amount: payAmt,
+        type: 'expense',
+        category: 'investments',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: 'Bank Transfer'
+      });
+      return;
+    }
+
+    const newBal = Math.max(0, targetCredit.balance - payAmt);
     updateCreditAccount(creditId, { ...targetCredit, balance: newBal });
 
     // Auto record transaction
@@ -378,6 +419,51 @@ export const FinanceProvider = ({ children }) => {
         paymentMethod: 'Bank Transfer'
       });
     }
+  };
+
+  const logChittyInstallment = (creditId) => {
+    const target = credits.find((c) => c.id === creditId);
+    if (!target) return;
+    const installmentAmt = target.monthlyInstallment || target.minPayment || (target.totalDraws > 0 ? (target.chittyAmount || target.limit) / target.totalDraws : 0);
+    const newPaidDraws = (target.paidDraws || 0) + 1;
+    const newBal = (target.balance || 0) + installmentAmt;
+
+    updateCreditAccount(creditId, {
+      ...target,
+      paidDraws: newPaidDraws,
+      balance: newBal
+    });
+
+    addTransaction({
+      description: `Chitty Draw #${newPaidDraws} Paid - ${target.name}`,
+      amount: installmentAmt,
+      type: 'expense',
+      category: 'investments',
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Bank Transfer'
+    });
+  };
+
+  const claimChittyPrize = (creditId, prizeAmount, drawNumber) => {
+    const target = credits.find((c) => c.id === creditId);
+    if (!target) return;
+    const wonAmt = parseFloat(prizeAmount || target.chittyAmount || target.limit || 0);
+
+    updateCreditAccount(creditId, {
+      ...target,
+      prizeWon: true,
+      prizeAmount: wonAmt,
+      prizeDrawNumber: parseInt(drawNumber || target.paidDraws || 1, 10)
+    });
+
+    addTransaction({
+      description: `🏆 Chitty Prize Won - ${target.name}`,
+      amount: wonAmt,
+      type: 'income',
+      category: 'investments',
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Bank Transfer'
+    });
   };
 
   const setBudgetLimit = async (category, limit) => {
@@ -506,6 +592,9 @@ export const FinanceProvider = ({ children }) => {
         totalBorrowedBalance,
         totalLentBalance,
         totalAssetBalance,
+        totalChittyBalance,
+        totalChittyPool,
+        chittyAccounts,
         totalAssetsCombined,
         netWorth,
         netBorrowLendPosition,
@@ -521,6 +610,8 @@ export const FinanceProvider = ({ children }) => {
         updateCreditAccount,
         deleteCreditAccount,
         logCreditPayment,
+        logChittyInstallment,
+        claimChittyPrize,
         setBudgetLimit,
         addGoal,
         updateGoal,
