@@ -20,7 +20,8 @@ import {
   Ticket,
   Trophy,
   CheckCircle2,
-  Coins
+  Coins,
+  X
 } from 'lucide-react';
 
 export default function CreditCardList() {
