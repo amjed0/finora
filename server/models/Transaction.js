@@ -9,7 +9,7 @@ const transactionSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     category: { type: String, required: true },
     date: { type: String, required: true },
-    paymentMethod: { type: String, default: 'Credit Card' },
+    paymentMethod: { type: String, default: 'cash' },
     creditAccountId: { type: String, default: null },
     account: { type: String, default: 'Cash Wallet' },
     notes: { type: String, default: '' },

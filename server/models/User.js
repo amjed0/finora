@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     currency: {
-      code: { type: String, default: 'USD' },
-      symbol: { type: String, default: '$' }
+      code: { type: String, default: 'INR' },
+      symbol: { type: String, default: '₹' }
     }
   },
   { timestamps: true }
