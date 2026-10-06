@@ -230,7 +230,7 @@ export const FinanceProvider = ({ children }) => {
   const totalBorrowedBalance = borrowedAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
   const totalLentBalance = lendingAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
   const totalAssetBalance = assetAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
-  const totalChittyBalance = chittyAccounts.reduce((sum, c) => sum + Number(c.balance || 0), 0);
+  const totalChittyBalance = chittyAccounts.reduce((sum, c) => sum + (c.prizeWon ? 0 : Number(c.balance || 0)), 0);
   const totalChittyPool = chittyAccounts.reduce((sum, c) => sum + Number(c.chittyAmount || c.limit || 0), 0);
 
   const totalAssetsCombined = totalAssetBalance + totalLentBalance + totalChittyBalance;
