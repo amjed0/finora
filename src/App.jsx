@@ -46,39 +46,26 @@ function MainApp() {
 
         <main className="page-body">
           {activeTab === 'dashboard' && (
-            <div key="dashboard">
+            <div key="dashboard" className="dashboard-container">
               <OverviewCards />
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                  gap: '24px',
-                  marginBottom: '24px'
-                }}
-              >
-                <div style={{ flex: 2 }}>
+              <div className="dashboard-top-grid">
+                <div className="dashboard-grid-item">
                   <CashflowChart />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="dashboard-grid-item">
                   <FinancialHealthScore />
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                  gap: '24px'
-                }}
-              >
-                <div style={{ flex: 1 }}>
+              <div className="dashboard-bottom-grid">
+                <div className="dashboard-grid-item">
                   <AssetAllocationChart />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="dashboard-grid-item">
                   <ExpenseCategoryChart />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="dashboard-grid-item">
                   <RecentTransactionsList />
                 </div>
               </div>

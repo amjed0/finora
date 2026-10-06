@@ -5,10 +5,165 @@
   position: relative;
 }
 
-/* Dashboard Charts Grid - Responsive */
+/* Dashboard Main Container & Responsive Grids */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-top-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.dashboard-grid-item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-grid-item > .glass-card {
+  flex: 1;
+}
+
+/* Tablet Layout (769px - 1100px) */
+@media (max-width: 1100px) {
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+/* Mobile Layout (< 768px) */
+@media (max-width: 768px) {
+  .dashboard-container {
+    gap: 14px;
+  }
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .page-body {
+    padding: 14px 12px calc(var(--nav-height-mobile) + 24px);
+  }
+  .glass-card {
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Overview Stat Cards Grid Responsive */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 0;
+}
+
 @media (max-width: 640px) {
-  .page-body > div > div[style*="grid"] {
-    grid-template-columns: 1fr !important;
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stats-grid .glass-card {
+    padding: 12px 14px;
+  }
+  .stats-grid .amount-font {
+    font-size: 1.25rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* Asset Allocation Equation Bar Responsive */
+.asset-equation-bar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+
+.asset-eq-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.asset-eq-divider {
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+@media (max-width: 480px) {
+  .asset-equation-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+  .asset-eq-divider {
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 6px 0;
+  }
+}
+
+/* Health Score Body Responsive */
+@media (max-width: 480px) {
+  .health-score-body {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+}
+
+/* Recent Transaction Row Responsive */
+.recent-tx-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  transition: background 0.2s ease;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .recent-tx-row {
+    flex-wrap: wrap;
   }
 }
 

@@ -25,7 +25,7 @@ export default function OverviewCards() {
   } = useFinance();
 
   return (
-    <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
+    <div className="stats-grid">
       {/* Net Worth */}
       <div className="glass-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>

@@ -28,7 +28,7 @@ export default function AssetAllocationChart() {
   return (
     <div className="glass-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Landmark size={18} color="#10b981" />
@@ -45,34 +45,22 @@ export default function AssetAllocationChart() {
         </div>
 
         {/* Net Worth Equation Bar */}
-        <div
-          style={{
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            padding: '12px 14px',
-            marginBottom: '20px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '8px',
-            textAlign: 'center'
-          }}
-        >
-          <div>
+        <div className="asset-equation-bar">
+          <div className="asset-eq-item">
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total Assets</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-income)' }}>
+            <div className="amount-font" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-income)' }}>
               {formatCurrency(totalAssetBalance)}
             </div>
           </div>
-          <div style={{ borderLeft: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)' }}>
+          <div className="asset-eq-item asset-eq-divider">
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Receivables (Lent)</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+            <div className="amount-font" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
               +{formatCurrency(totalLentBalance)}
             </div>
           </div>
-          <div>
+          <div className="asset-eq-item">
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Liabilities (Debts)</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-expense)' }}>
+            <div className="amount-font" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-expense)' }}>
               -{formatCurrency(totalBorrowedBalance)}
             </div>
           </div>

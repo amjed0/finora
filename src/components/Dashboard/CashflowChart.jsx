@@ -28,33 +28,34 @@ export default function CashflowChart() {
   );
 
   return (
-    <div className="glass-card" style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Cashflow Analytics</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Monthly Income vs Expense comparison
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.8rem', fontWeight: 600 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-income)' }}></span>
-            <span>Income</span>
+    <div className="glass-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Cashflow Analytics</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Monthly Income vs Expense comparison
+            </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-expense)' }}></span>
-            <span>Expense</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-income)' }}></span>
+              <span>Income</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-expense)' }}></span>
+              <span>Expense</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {months.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          No monthly data recorded yet.
-        </div>
-      ) : (
-        <div style={{ width: '100%', overflowX: 'auto' }}>
-          <div style={{ minWidth: '320px', height: '220px', display: 'flex', alignItems: 'flex-end', gap: '24px', padding: '20px 10px 30px' }}>
+        {months.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+            No monthly data recorded yet.
+          </div>
+        ) : (
+          <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ minWidth: '260px', height: '210px', display: 'flex', alignItems: 'flex-end', gap: '16px', padding: '16px 8px 24px' }}>
             {months.map((month) => {
               const inc = monthlyData[month].income;
               const exp = monthlyData[month].expense;
@@ -101,9 +102,10 @@ export default function CashflowChart() {
                 </div>
               );
             })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

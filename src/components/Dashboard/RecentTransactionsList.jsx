@@ -14,47 +14,39 @@ export default function RecentTransactionsList() {
   };
 
   return (
-    <div className="glass-card" style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Recent Activity</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Latest income and expense entries
-          </p>
+    <div className="glass-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Recent Activity</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Latest income and expense entries
+            </p>
+          </div>
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '32px' }}
+            onClick={() => setActiveTab('transactions')}
+          >
+            View All <ChevronRight size={14} />
+          </button>
         </div>
-        <button
-          className="btn btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '0.8rem', minHeight: '32px' }}
-          onClick={() => setActiveTab('transactions')}
-        >
-          View All <ChevronRight size={14} />
-        </button>
-      </div>
 
-      {recent.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-          No recent transactions found. Click "Add Record" to start.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {recent.map((tx) => {
-            const catInfo = getCategoryInfo(tx.type, tx.category);
-            const isIncome = tx.type === 'income';
+        {recent.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+            No recent transactions found. Click "Add Record" to start.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {recent.map((tx) => {
+              const catInfo = getCategoryInfo(tx.type, tx.category);
+              const isIncome = tx.type === 'income';
 
-            return (
-              <div
-                key={tx.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  transition: 'background 0.2s ease'
-                }}
-              >
+              return (
+                <div
+                  key={tx.id}
+                  className="recent-tx-row"
+                >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                   <div
                     style={{
@@ -137,6 +129,7 @@ export default function RecentTransactionsList() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -61,13 +61,13 @@ export default function FinancialHealthScore() {
         <ShieldCheck size={20} color={getScoreColor()} />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', margin: 'auto 0' }}>
+      <div className="health-score-body" style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: 'auto 0' }}>
         {/* Circle Score Display */}
         <div
           style={{
             position: 'relative',
-            width: '100px',
-            height: '100px',
+            width: '90px',
+            height: '90px',
             borderRadius: '50%',
             background: `conic-gradient(${getScoreColor()} ${finalScore * 3.6}deg, rgba(255,255,255,0.1) 0deg)`,
             display: 'flex',
@@ -78,8 +78,8 @@ export default function FinancialHealthScore() {
         >
           <div
             style={{
-              width: '78px',
-              height: '78px',
+              width: '70px',
+              height: '70px',
               borderRadius: '50%',
               background: 'var(--bg-secondary)',
               display: 'flex',
@@ -88,21 +88,21 @@ export default function FinancialHealthScore() {
               justifyContent: 'center'
             }}
           >
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: getScoreColor() }}>
+            <span style={{ fontSize: '1.4rem', fontWeight: 800, color: getScoreColor() }}>
               {finalScore}
             </span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>out of 100</span>
+            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>out of 100</span>
           </div>
         </div>
 
-        <div>
-          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: getScoreColor() }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: getScoreColor(), lineHeight: 1.2 }}>
             {getScoreText()}
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
             Savings Rate: <strong>{savingsRate.toFixed(1)}%</strong>
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
             Credit Utilization: <strong>{totalCreditUtilization.toFixed(1)}%</strong>
           </div>
         </div>
