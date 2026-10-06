@@ -166,11 +166,11 @@ export default function TransactionModal() {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="form-select"
               >
+                 <option value="Cash">Cash</option>
+                 <option value="PayPal">Upi</option>
                 <option value="Credit Card">Credit Card</option>
                 <option value="Bank Transfer">Bank Transfer</option>
                 <option value="Debit Card">Debit Card</option>
-                <option value="Cash">Cash</option>
-                <option value="PayPal">PayPal</option>
                 <option value="Other">Other</option>
               </select>
             </div>
