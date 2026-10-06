@@ -20,7 +20,7 @@ export default function TransactionModal() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(CATEGORIES.expense[0].id);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [paymentMethod, setPaymentMethod] = useState('Credit Card');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [creditAccountId, setCreditAccountId] = useState('');
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function TransactionModal() {
       setAmount(editingTx.amount || '');
       setCategory(editingTx.category || (editingTx.type === 'income' ? CATEGORIES.income[0].id : CATEGORIES.expense[0].id));
       setDate(editingTx.date || new Date().toISOString().split('T')[0]);
-      setPaymentMethod(editingTx.paymentMethod || 'Credit Card');
+      setPaymentMethod(editingTx.paymentMethod || 'Cash');
       setCreditAccountId(editingTx.creditAccountId || '');
     } else {
       setType('expense');
@@ -38,7 +38,7 @@ export default function TransactionModal() {
       setAmount('');
       setCategory(CATEGORIES.expense[0].id);
       setDate(new Date().toISOString().split('T')[0]);
-      setPaymentMethod('Credit Card');
+      setPaymentMethod('Cash');
       setCreditAccountId('');
     }
   }, [editingTx, isTxModalOpen]);

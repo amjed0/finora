@@ -577,9 +577,9 @@ export default function CreditAccountModal() {
                   >
                     {category === 'borrowing' ? (
                       <>
+                        <option value="personal_borrowing">Personal Borrowing (Friend/Family)</option>
                         <option value="credit_card">Credit Card Line</option>
                         <option value="loan">Auto / Mortgage Loan</option>
-                        <option value="personal_borrowing">Personal Borrowing (Friend/Family)</option>
                         <option value="personal_loan">Bank Personal Loan</option>
                       </>
                     ) : category === 'lending' ? (

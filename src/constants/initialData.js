@@ -25,6 +25,7 @@ export const CATEGORIES = {
   ],
   income: [
     { id: 'salary', name: 'Monthly Salary', color: '#10b981', icon: 'Briefcase' },
+    { id: 'wages', name: 'Wages', color: '#10b981', icon: 'Briefcase' },
     { id: 'freelance', name: 'Freelance & Side Business', color: '#34d399', icon: 'Laptop' },
     { id: 'investments', name: 'Investments & Dividends', color: '#06b6d4', icon: 'TrendingUp' },
     { id: 'cashback', name: 'Rewards & Cashback', color: '#a3e635', icon: 'Gift' },
