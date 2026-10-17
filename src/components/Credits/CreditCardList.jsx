@@ -48,18 +48,34 @@ export default function CreditCardList() {
   } = useFinance();
 
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'borrowing' | 'lending' | 'asset' | 'chitty'
+  const [pageTab, setPageTab] = useState('active'); // 'active' | 'completed'
   const [claimModalAccount, setClaimModalAccount] = useState(null);
   const [claimPrizeAmount, setClaimPrizeAmount] = useState('');
   const [claimDrawNumber, setClaimDrawNumber] = useState('');
 
-  const borrowedAccounts = credits.filter(
+  // A credit is completed when:
+  // - borrowing/lending/asset: balance reaches 0
+  // - chitty: prizeWon is true (prize has been won — regardless of draw count)
+  const isCompleted = (c) => {
+    if (c.category === 'chitty') return Boolean(c.prizeWon);
+    return Number(c.balance || 0) === 0;
+  };
+
+  // Split credits into active vs completed
+  const activeCredits = credits.filter((c) => !isCompleted(c));
+  const completedCredits = credits.filter((c) => isCompleted(c));
+
+  // Which pool to operate on for the current page tab
+  const pool = pageTab === 'active' ? activeCredits : completedCredits;
+
+  const borrowedAccounts = activeCredits.filter(
     (c) => c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset' && c.category !== 'chitty')
   );
-  const lendingAccounts = credits.filter((c) => c.category === 'lending');
-  const assetAccounts = credits.filter((c) => c.category === 'asset');
-  const chitAccounts = credits.filter((c) => c.category === 'chitty');
+  const lendingAccounts = activeCredits.filter((c) => c.category === 'lending');
+  const assetAccounts = activeCredits.filter((c) => c.category === 'asset');
+  const chitAccounts = activeCredits.filter((c) => c.category === 'chitty');
 
-  const filteredAccounts = credits.filter((c) => {
+  const filteredAccounts = pool.filter((c) => {
     if (activeFilter === 'borrowing') return c.category === 'borrowing' || (!c.category && c.category !== 'lending' && c.category !== 'asset' && c.category !== 'chitty');
     if (activeFilter === 'lending') return c.category === 'lending';
     if (activeFilter === 'asset') return c.category === 'asset';
@@ -323,50 +339,80 @@ export default function CreditCardList() {
         )}
       </div>
 
-      {/* Filter Tabs */}
+      {/* Active / Completed Page Tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div className="auth-tabs-switcher" style={{ margin: 0, minWidth: '320px', gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        <div className="auth-tabs-switcher" style={{ margin: 0, gridTemplateColumns: 'repeat(2, 1fr)', maxWidth: '280px' }}>
           <button
-            className={`auth-tab-btn ${activeFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('all')}
+            className={`auth-tab-btn ${pageTab === 'active' ? 'active' : ''}`}
+            style={{ background: pageTab === 'active' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : '' }}
+            onClick={() => setPageTab('active')}
           >
-            All ({credits.length})
+            ⚡ Active ({activeCredits.length})
           </button>
           <button
-            className={`auth-tab-btn ${activeFilter === 'borrowing' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('borrowing')}
+            className={`auth-tab-btn ${pageTab === 'completed' ? 'active' : ''}`}
+            style={{ background: pageTab === 'completed' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '' }}
+            onClick={() => setPageTab('completed')}
           >
-            🔴 Debit ({borrowedAccounts.length})
-          </button>
-          <button
-            className={`auth-tab-btn ${activeFilter === 'lending' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('lending')}
-          >
-            🟢 Credit ({lendingAccounts.length})
-          </button>
-          <button
-            className={`auth-tab-btn ${activeFilter === 'asset' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('asset')}
-          >
-            🏦 Assets ({assetAccounts.length})
-          </button>
-          <button
-            className={`auth-tab-btn ${activeFilter === 'chitty' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('chitty')}
-          >
-            🎟️ Chitty ({chitAccounts.length})
+            ✅ Completed ({completedCredits.length})
           </button>
         </div>
       </div>
 
+      {/* Category Filter Tabs — only show on active tab */}
+      {pageTab === 'active' && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="auth-tabs-switcher" style={{ margin: 0, minWidth: '320px', gridTemplateColumns: 'repeat(5, 1fr)' }}>
+            <button
+              className={`auth-tab-btn ${activeFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('all')}
+            >
+              All ({activeCredits.length})
+            </button>
+            <button
+              className={`auth-tab-btn ${activeFilter === 'borrowing' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('borrowing')}
+            >
+              🔴 Debit ({borrowedAccounts.length})
+            </button>
+            <button
+              className={`auth-tab-btn ${activeFilter === 'lending' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('lending')}
+            >
+              🟢 Credit ({lendingAccounts.length})
+            </button>
+            <button
+              className={`auth-tab-btn ${activeFilter === 'asset' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('asset')}
+            >
+              🏦 Assets ({assetAccounts.length})
+            </button>
+            <button
+              className={`auth-tab-btn ${activeFilter === 'chitty' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('chitty')}
+            >
+              🎟️ Chitty ({chitAccounts.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Accounts Cards Grid */}
       {filteredAccounts.length === 0 ? (
         <div className="glass-card" style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted)' }}>
-          <HandCoins size={44} style={{ marginBottom: '12px', opacity: 0.5 }} />
-          <p style={{ fontWeight: 600, fontSize: '1rem' }}>No records found under this filter.</p>
-          <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>
-            Click "Add Record" above to start tracking debts, receivables, assets, or chitty funds.
-          </p>
+          {pageTab === 'completed' ? (
+            <>
+              <CheckCircle2 size={44} style={{ marginBottom: '12px', opacity: 0.4, color: '#10b981' }} />
+              <p style={{ fontWeight: 600, fontSize: '1rem' }}>No completed records yet.</p>
+              <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>Items move here automatically when fully paid off or prize is won.</p>
+            </>
+          ) : (
+            <>
+              <HandCoins size={44} style={{ marginBottom: '12px', opacity: 0.5 }} />
+              <p style={{ fontWeight: 600, fontSize: '1rem' }}>No active records found under this filter.</p>
+              <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>Click "Add Record" above to start tracking debts, receivables, assets, or chitty funds.</p>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
@@ -643,61 +689,88 @@ export default function CreditCardList() {
                   </div>
                 )}
 
-                {/* Primary Action Button */}
-                {isChitty ? (
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                {/* Primary Action Button — hidden on completed tab */}
+                {pageTab === 'active' && (
+                  isChitty ? (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          flex: 1,
+                          gap: '8px',
+                          background: btnGradient,
+                          color: '#000',
+                          fontWeight: 700
+                        }}
+                        disabled={(account.paidDraws || 0) >= (account.totalDraws || 999)}
+                        onClick={() => logChittyInstallment(account.id)}
+                      >
+                        <Coins size={16} />
+                        <span>
+                          {(account.paidDraws || 0) >= (account.totalDraws || 999)
+                            ? 'All Draws Paid ✅'
+                            : `Pay Draw #${(account.paidDraws || 0) + 1} (${formatCurrency(account.monthlyInstallment || account.minPayment || 0)})`}
+                        </span>
+                      </button>
+                    </div>
+                  ) : isAsset ? (
                     <button
                       className="btn btn-primary"
                       style={{
-                        flex: 1,
+                        width: '100%',
                         gap: '8px',
-                        background: btnGradient,
-                        color: '#000',
-                        fontWeight: 700
+                        background: btnGradient
                       }}
-                      disabled={(account.paidDraws || 0) >= (account.totalDraws || 999)}
-                      onClick={() => logChittyInstallment(account.id)}
+                      onClick={() => {
+                        setEditingCredit(account);
+                        setIsCreditModalOpen(true);
+                      }}
                     >
-                      <Coins size={16} />
-                      <span>
-                        {(account.paidDraws || 0) >= (account.totalDraws || 999)
-                          ? 'All Draws Paid ✅'
-                          : `Pay Draw #${(account.paidDraws || 0) + 1} (${formatCurrency(account.monthlyInstallment || account.minPayment || 0)})`}
-                      </span>
+                      <TrendingUp size={16} />
+                      <span>{actionLabel}</span>
                     </button>
+                  ) : (
+                    <button
+                      className="btn btn-primary"
+                      style={{
+                        width: '100%',
+                        gap: '8px',
+                        background: btnGradient
+                      }}
+                      onClick={() => {
+                        setSelectedCreditForPay(account);
+                        setIsPaymentModalOpen(true);
+                      }}
+                    >
+                      <Sparkles size={16} />
+                      <span>{actionLabel}</span>
+                    </button>
+                  )
+                )}
+
+                {/* Completed stamp — shown on completed tab */}
+                {pageTab === 'completed' && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    color: '#10b981',
+                    fontWeight: 700,
+                    fontSize: '0.85rem'
+                  }}>
+                    <CheckCircle2 size={16} />
+                    <span>
+                      {isChitty ? '🏆 Chitty Prize Won — Completed' :
+                       isLending ? '✅ Fully Repaid to You' :
+                       isAsset ? '✅ Asset Closed / Sold' :
+                       '✅ Debt Fully Paid Off'}
+                    </span>
                   </div>
-                ) : isAsset ? (
-                  <button
-                    className="btn btn-primary"
-                    style={{
-                      width: '100%',
-                      gap: '8px',
-                      background: btnGradient
-                    }}
-                    onClick={() => {
-                      setEditingCredit(account);
-                      setIsCreditModalOpen(true);
-                    }}
-                  >
-                    <TrendingUp size={16} />
-                    <span>{actionLabel}</span>
-                  </button>
-                ) : (
-                  <button
-                    className="btn btn-primary"
-                    style={{
-                      width: '100%',
-                      gap: '8px',
-                      background: btnGradient
-                    }}
-                    onClick={() => {
-                      setSelectedCreditForPay(account);
-                      setIsPaymentModalOpen(true);
-                    }}
-                  >
-                    <Sparkles size={16} />
-                    <span>{actionLabel}</span>
-                  </button>
                 )}
               </div>
             );
