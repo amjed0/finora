@@ -21,6 +21,7 @@ export const CATEGORIES = {
     { id: 'shopping', name: 'Shopping & Gear', color: '#f472b6', icon: 'ShoppingBag' },
     { id: 'health', name: 'Healthcare & Fitness', color: '#2dd4bf', icon: 'HeartPulse' },
     { id: 'debt_payment', name: 'Credit & Debt Payoff', color: '#a855f7', icon: 'CreditCard' },
+    { id: 'money_lent', name: 'Money Lent Out', color: '#06b6d4', icon: 'ArrowUpRight' },
     { id: 'other_exp', name: 'Other Expenses', color: '#94a3b8', icon: 'MoreHorizontal' }
   ],
   income: [
@@ -31,6 +32,7 @@ export const CATEGORIES = {
     { id: 'cashback', name: 'Rewards & Cashback', color: '#a3e635', icon: 'Gift' },
     { id: 'rental', name: 'Rental Income', color: '#22c55e', icon: 'Building' },
     { id: 'debt_received', name: 'Borrowed / Debt Received', color: '#f59e0b', icon: 'ArrowDownLeft' },
+    { id: 'loan_repaid', name: 'Loan Repaid to Me', color: '#06b6d4', icon: 'ArrowDownLeft' },
     { id: 'other_inc', name: 'Other Income', color: '#64748b', icon: 'IndianRupee' }
   ]
 };

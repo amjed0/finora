@@ -283,7 +283,7 @@ export default function CreditCardList() {
               {formatCurrency(Math.abs(netWorth))}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Assets + Chitty + Lent − Debts
+              Cash Balance + Assets + Chitty − Debts
             </div>
           </div>
         </div>

@@ -47,7 +47,7 @@ export default function OverviewCards() {
           {formatCurrency(netWorth)}
         </div>
         <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-          Net Balance ({formatCurrency(netBalance)}) + Assets ({formatCurrency(totalAssetBalance)}) − Debts
+          Cash Balance + Assets + Chitty − Debts
         </div>
       </div>
 

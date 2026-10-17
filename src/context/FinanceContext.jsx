@@ -233,8 +233,12 @@ export const FinanceProvider = ({ children }) => {
   const totalChittyBalance = chittyAccounts.reduce((sum, c) => sum + (c.prizeWon ? 0 : Number(c.balance || 0)), 0);
   const totalChittyPool = chittyAccounts.reduce((sum, c) => sum + Number(c.chittyAmount || c.limit || 0), 0);
 
-  const totalAssetsCombined = totalAssetBalance + totalLentBalance + totalChittyBalance;
-  // Net Worth includes Net Cash Balance (Incomes - Expenses) + Assets + Money Lent + Chitty Investments - Debts
+  // NOTE: totalLentBalance is excluded from net worth assets because:
+  // when you lend money, an expense tx is auto-created (reducing netBalance by the lent amount).
+  // When money is returned, an income tx restores netBalance. So lent money is already
+  // tracked through cashflow — counting it again here would double-count it.
+  const totalAssetsCombined = totalAssetBalance + totalChittyBalance;
+  // Net Worth = Cash Balance (income − expense) + Real Assets + Chitty Savings − Debts
   const netWorth = netBalance + totalAssetsCombined - totalBorrowedBalance;
 
   const totalCreditLimit = borrowedAccounts.reduce((sum, c) => sum + Number(c.limit || 0), 0);
@@ -328,19 +332,32 @@ export const FinanceProvider = ({ children }) => {
       console.warn('Saved credit account locally:', e.message);
     }
 
-    // 💡 Auto-record income transaction for borrowed money so it appears in cashflow
+    // 💡 Auto-record income tx for borrowed money (cash inflow)
     if (newCredit.category === 'borrowing' && newCredit.balance > 0) {
-      const incomeTx = {
+      addTransaction({
         description: `💰 Borrowed from ${newCredit.entity || newCredit.name}`,
         amount: newCredit.balance,
         type: 'income',
         category: 'debt_received',
-        date: newCredit.dueDate ? new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
         paymentMethod: 'Cash',
-        linkedCreditId: newCredit.id, // link so we can find it later
+        linkedCreditId: newCredit.id,
         notes: `Auto-recorded: Debt received — ${newCredit.name}`
-      };
-      addTransaction(incomeTx);
+      });
+    }
+
+    // 💸 Auto-record expense tx for lent money (cash outflow — reduces cashflow)
+    if (newCredit.category === 'lending' && newCredit.balance > 0) {
+      addTransaction({
+        description: `🤝 Lent to ${newCredit.entity || newCredit.name}`,
+        amount: newCredit.balance,
+        type: 'expense',
+        category: 'money_lent',
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: 'Cash',
+        linkedCreditId: newCredit.id,
+        notes: `Auto-recorded: Money lent — ${newCredit.name}`
+      });
     }
   };
 
@@ -366,7 +383,7 @@ export const FinanceProvider = ({ children }) => {
       prev.map((c) => (c.id === id ? { ...c, ...updatedObj } : c))
     );
 
-    // If borrowing, sync the linked income transaction amount
+    // Sync linked auto-transaction if balance changed
     if (updatedObj.category === 'borrowing') {
       const linkedTx = transactions.find(
         (t) => t.linkedCreditId === id && t.category === 'debt_received'
@@ -380,6 +397,19 @@ export const FinanceProvider = ({ children }) => {
         });
       }
     }
+    if (updatedObj.category === 'lending') {
+      const linkedTx = transactions.find(
+        (t) => t.linkedCreditId === id && t.category === 'money_lent'
+      );
+      if (linkedTx && linkedTx.amount !== updatedObj.balance) {
+        updateTransaction(linkedTx.id, {
+          ...linkedTx,
+          amount: updatedObj.balance,
+          description: `🤝 Lent to ${updatedObj.entity || updatedObj.name}`,
+          notes: `Auto-recorded: Money lent — ${updatedObj.name}`
+        });
+      }
+    }
 
     try {
       await api.updateCredit(id, updatedObj);
@@ -389,15 +419,19 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const deleteCreditAccount = async (id) => {
-    // If borrowing, also remove the auto-generated income transaction linked to it
+    // Remove the auto-generated linked transaction when credit is deleted
     const creditToDelete = credits.find((c) => c.id === id);
     if (creditToDelete?.category === 'borrowing') {
       const linkedTx = transactions.find(
         (t) => t.linkedCreditId === id && t.category === 'debt_received'
       );
-      if (linkedTx) {
-        deleteTransaction(linkedTx.id);
-      }
+      if (linkedTx) deleteTransaction(linkedTx.id);
+    }
+    if (creditToDelete?.category === 'lending') {
+      const linkedTx = transactions.find(
+        (t) => t.linkedCreditId === id && t.category === 'money_lent'
+      );
+      if (linkedTx) deleteTransaction(linkedTx.id);
     }
 
     setCredits((prev) => prev.filter((c) => c.id !== id));
@@ -442,13 +476,15 @@ export const FinanceProvider = ({ children }) => {
 
     // Auto record transaction
     if (isLending) {
+      // 💚 Money returned — add as income to restore cashflow
       addTransaction({
-        description: `Collection from ${targetCredit.entity || targetCredit.name}`,
+        description: `✅ Loan repaid by ${targetCredit.entity || targetCredit.name}`,
         amount: payAmt,
         type: 'income',
-        category: 'other_inc',
+        category: 'loan_repaid',
         date: new Date().toISOString().split('T')[0],
-        paymentMethod: 'Bank Transfer'
+        paymentMethod: 'Bank Transfer',
+        notes: `Repayment received for: ${targetCredit.name}`
       });
     } else {
       addTransaction({
