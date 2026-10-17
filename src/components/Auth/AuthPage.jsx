@@ -173,7 +173,7 @@ export default function AuthPage() {
                 <div>
                   <div className="auth-feature-text">Smart Income & Expense Insights</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Categorized transactions and visual monthly cashflow charts
+                    Categorized transactions and visual cashflow charts
                   </div>
                 </div>
               </div>

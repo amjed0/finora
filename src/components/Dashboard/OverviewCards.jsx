@@ -47,7 +47,7 @@ export default function OverviewCards() {
           {formatCurrency(netWorth)}
         </div>
         <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-          Cash Balance + Assets + Chitty − Debts
+          Cash + Assets + Lent + Chitty − Debts
         </div>
       </div>
 
@@ -62,10 +62,10 @@ export default function OverviewCards() {
           </div>
         </div>
         <div className="amount-font text-income" style={{ fontSize: '1.65rem', fontWeight: 800 }}>
-          {formatCurrency(totalAssetBalance)}
+          {formatCurrency(totalAssetBalance + totalLentBalance)}
         </div>
         <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-          Investments, Savings & Real Estate
+          Assets {formatCurrency(totalAssetBalance)} + Lent {formatCurrency(totalLentBalance)}
         </div>
       </div>
 
@@ -73,7 +73,7 @@ export default function OverviewCards() {
       <div className="glass-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-            Monthly Cashflow
+            Cashflow
           </span>
           <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
             <Wallet size={20} />

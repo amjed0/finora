@@ -233,12 +233,12 @@ export const FinanceProvider = ({ children }) => {
   const totalChittyBalance = chittyAccounts.reduce((sum, c) => sum + (c.prizeWon ? 0 : Number(c.balance || 0)), 0);
   const totalChittyPool = chittyAccounts.reduce((sum, c) => sum + Number(c.chittyAmount || c.limit || 0), 0);
 
-  // NOTE: totalLentBalance is excluded from net worth assets because:
-  // when you lend money, an expense tx is auto-created (reducing netBalance by the lent amount).
-  // When money is returned, an income tx restores netBalance. So lent money is already
-  // tracked through cashflow — counting it again here would double-count it.
-  const totalAssetsCombined = totalAssetBalance + totalChittyBalance;
-  // Net Worth = Cash Balance (income − expense) + Real Assets + Chitty Savings − Debts
+  // totalLentBalance is included as a receivable asset:
+  // when you lend money, an expense tx reduces netBalance (cashflow decreases),
+  // and the lent amount appears here as an asset — they cancel out in net worth.
+  // When repaid: income tx restores netBalance, lent balance drops to 0 — net worth unchanged.
+  const totalAssetsCombined = totalAssetBalance + totalLentBalance + totalChittyBalance;
+  // Net Worth = Cash Balance (income − expense) + Assets + Lent (Receivable) + Chitty − Debts
   const netWorth = netBalance + totalAssetsCombined - totalBorrowedBalance;
 
   const totalCreditLimit = borrowedAccounts.reduce((sum, c) => sum + Number(c.limit || 0), 0);
