@@ -327,6 +327,21 @@ export const FinanceProvider = ({ children }) => {
     } catch (e) {
       console.warn('Saved credit account locally:', e.message);
     }
+
+    // 💡 Auto-record income transaction for borrowed money so it appears in cashflow
+    if (newCredit.category === 'borrowing' && newCredit.balance > 0) {
+      const incomeTx = {
+        description: `💰 Borrowed from ${newCredit.entity || newCredit.name}`,
+        amount: newCredit.balance,
+        type: 'income',
+        category: 'debt_received',
+        date: newCredit.dueDate ? new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        paymentMethod: 'Cash',
+        linkedCreditId: newCredit.id, // link so we can find it later
+        notes: `Auto-recorded: Debt received — ${newCredit.name}`
+      };
+      addTransaction(incomeTx);
+    }
   };
 
   const updateCreditAccount = async (id, creditData) => {
@@ -351,6 +366,21 @@ export const FinanceProvider = ({ children }) => {
       prev.map((c) => (c.id === id ? { ...c, ...updatedObj } : c))
     );
 
+    // If borrowing, sync the linked income transaction amount
+    if (updatedObj.category === 'borrowing') {
+      const linkedTx = transactions.find(
+        (t) => t.linkedCreditId === id && t.category === 'debt_received'
+      );
+      if (linkedTx && linkedTx.amount !== updatedObj.balance) {
+        updateTransaction(linkedTx.id, {
+          ...linkedTx,
+          amount: updatedObj.balance,
+          description: `💰 Borrowed from ${updatedObj.entity || updatedObj.name}`,
+          notes: `Auto-recorded: Debt received — ${updatedObj.name}`
+        });
+      }
+    }
+
     try {
       await api.updateCredit(id, updatedObj);
     } catch (e) {
@@ -359,6 +389,17 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const deleteCreditAccount = async (id) => {
+    // If borrowing, also remove the auto-generated income transaction linked to it
+    const creditToDelete = credits.find((c) => c.id === id);
+    if (creditToDelete?.category === 'borrowing') {
+      const linkedTx = transactions.find(
+        (t) => t.linkedCreditId === id && t.category === 'debt_received'
+      );
+      if (linkedTx) {
+        deleteTransaction(linkedTx.id);
+      }
+    }
+
     setCredits((prev) => prev.filter((c) => c.id !== id));
 
     try {

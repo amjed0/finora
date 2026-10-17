@@ -30,6 +30,7 @@ export const CATEGORIES = {
     { id: 'investments', name: 'Investments & Dividends', color: '#06b6d4', icon: 'TrendingUp' },
     { id: 'cashback', name: 'Rewards & Cashback', color: '#a3e635', icon: 'Gift' },
     { id: 'rental', name: 'Rental Income', color: '#22c55e', icon: 'Building' },
+    { id: 'debt_received', name: 'Borrowed / Debt Received', color: '#f59e0b', icon: 'ArrowDownLeft' },
     { id: 'other_inc', name: 'Other Income', color: '#64748b', icon: 'IndianRupee' }
   ]
 };
