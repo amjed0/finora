@@ -313,6 +313,7 @@ export const FinanceProvider = ({ children }) => {
       const creditsToRemove = current.credits.filter(
         (c) => !target.credits.some((t) => (t._id || t.id) === (c._id || c.id))
       );
+      
       for (const c of creditsToRemove) {
         api.deleteCredit(c._id || c.id).catch(() => {});
       }
