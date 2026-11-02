@@ -71,6 +71,9 @@ export const FinanceProvider = ({ children }) => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedCreditForPay, setSelectedCreditForPay] = useState(null);
 
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [selectedAssetForWithdraw, setSelectedAssetForWithdraw] = useState(null);
+
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
 
@@ -776,6 +779,72 @@ export const FinanceProvider = ({ children }) => {
     });
   };
 
+  const withdrawAsset = async (assetId, amount) => {
+    const asset = stateRef.current.credits.find((c) => c.id === assetId && c.category === 'asset');
+    if (!asset) return;
+
+    const sellAmount = parseFloat(amount !== undefined && amount !== null ? amount : (asset.balance || 0));
+    if (sellAmount <= 0) return;
+
+    recordAction(`Sold asset: ${asset.name}`);
+    const userId = currentUser?.id || 'default_user';
+
+    // 1. Create Income Transaction
+    const newTx = {
+      userId,
+      id: `tx-${Date.now()}`,
+      description: `💵 Asset Sale: ${asset.name}`,
+      amount: sellAmount,
+      type: 'income',
+      category: 'investments',
+      date: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Bank Transfer',
+      notes: `Liquidated from ${asset.name} (${asset.type ? asset.type.toUpperCase() : 'ASSET'})`
+    };
+
+    setTransactions((prev) => [newTx, ...prev]);
+
+    try {
+      const saved = await api.addTransaction(newTx);
+      if (saved && (saved._id || saved.id)) {
+        const mongoId = saved._id || saved.id;
+        setTransactions((prev) =>
+          prev.map((t) => (t.id === newTx.id ? { ...t, id: mongoId, _id: mongoId } : t))
+        );
+      }
+    } catch (e) {
+      console.warn('Saved liquidation tx locally:', e.message);
+    }
+
+    // 2. Remove asset or reduce balance
+    const currentBal = parseFloat(asset.balance || 0);
+    const remainingBalance = Math.max(0, currentBal - sellAmount);
+
+    if (remainingBalance <= 0) {
+      // Remove asset completely
+      setCredits((prev) => prev.filter((c) => c.id !== assetId));
+      try {
+        await api.deleteCredit(assetId);
+      } catch (e) {
+        console.warn('Deleted asset locally:', e.message);
+      }
+      setUndoRedoToast(`Sold & removed ${asset.name} (+${formatCurrency(sellAmount)} Income)`);
+    } else {
+      // Reduce balance
+      const updatedAsset = {
+        ...asset,
+        balance: remainingBalance
+      };
+      setCredits((prev) => prev.map((c) => (c.id === assetId ? updatedAsset : c)));
+      try {
+        await api.updateCredit(assetId, updatedAsset);
+      } catch (e) {
+        console.warn('Updated asset locally:', e.message);
+      }
+      setUndoRedoToast(`Withdrew ${formatCurrency(sellAmount)} from ${asset.name} to Income`);
+    }
+  };
+
   const setBudgetLimit = async (category, limit) => {
     const userId = currentUser?.id || 'default_user';
     const numLimit = parseFloat(limit);
@@ -936,6 +1005,7 @@ export const FinanceProvider = ({ children }) => {
         logCreditPayment,
         logChittyInstallment,
         claimChittyPrize,
+        withdrawAsset,
         setBudgetLimit,
         addGoal,
         updateGoal,
@@ -957,6 +1027,10 @@ export const FinanceProvider = ({ children }) => {
         setIsPaymentModalOpen,
         selectedCreditForPay,
         setSelectedCreditForPay,
+        isWithdrawModalOpen,
+        setIsWithdrawModalOpen,
+        selectedAssetForWithdraw,
+        setSelectedAssetForWithdraw,
         isGoalModalOpen,
         setIsGoalModalOpen,
         editingGoal,

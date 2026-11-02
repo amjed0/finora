@@ -21,6 +21,8 @@ export default function CreditAccountModal() {
     setEditingCredit,
     addCreditAccount,
     updateCreditAccount,
+    setIsWithdrawModalOpen,
+    setSelectedAssetForWithdraw,
     currency
   } = useFinance();
 
@@ -711,6 +713,58 @@ export default function CreditAccountModal() {
               className="form-textarea"
             />
           </div>
+
+          {editingCredit && category === 'asset' && (
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981' }}>
+                  Liquidate / Sell Asset
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  Convert this asset ({currency.symbol}{Number(balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) into Income
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  padding: '7px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onClick={() => {
+                  const targetAsset = {
+                    ...editingCredit,
+                    balance: parseFloat(balance || editingCredit.balance || 0)
+                  };
+                  setIsCreditModalOpen(false);
+                  setSelectedAssetForWithdraw(targetAsset);
+                  setIsWithdrawModalOpen(true);
+                }}
+              >
+                <ArrowDownLeft size={16} />
+                <span>Withdraw to Income</span>
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
             <button

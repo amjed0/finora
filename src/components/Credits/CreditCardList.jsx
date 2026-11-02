@@ -32,6 +32,8 @@ export default function CreditCardList() {
     setIsCreditModalOpen,
     setSelectedCreditForPay,
     setIsPaymentModalOpen,
+    setIsWithdrawModalOpen,
+    setSelectedAssetForWithdraw,
     formatCurrency,
     totalBorrowedBalance,
     totalLentBalance,
@@ -714,21 +716,48 @@ export default function CreditCardList() {
                       </button>
                     </div>
                   ) : isAsset ? (
-                    <button
-                      className="btn btn-primary"
-                      style={{
-                        width: '100%',
-                        gap: '8px',
-                        background: btnGradient
-                      }}
-                      onClick={() => {
-                        setEditingCredit(account);
-                        setIsCreditModalOpen(true);
-                      }}
-                    >
-                      <TrendingUp size={16} />
-                      <span>{actionLabel}</span>
-                    </button>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        style={{
+                          gap: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.8rem',
+                          fontWeight: 600
+                        }}
+                        onClick={() => {
+                          setEditingCredit(account);
+                          setIsCreditModalOpen(true);
+                        }}
+                        title="Edit asset details and market value"
+                      >
+                        <Edit2 size={14} />
+                        <span>Edit Value</span>
+                      </button>
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          gap: '6px',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          color: '#fff',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.8rem'
+                        }}
+                        onClick={() => {
+                          setSelectedAssetForWithdraw(account);
+                          setIsWithdrawModalOpen(true);
+                        }}
+                        title="Withdraw asset funds to Income"
+                      >
+                        <ArrowDownLeft size={15} />
+                        <span>Withdraw / Sell</span>
+                      </button>
+                    </div>
                   ) : (
                     <button
                       className="btn btn-primary"

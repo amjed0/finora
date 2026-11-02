@@ -24,6 +24,7 @@ import CreditCardList from './components/Credits/CreditCardList';
 import CreditAccountModal from './components/Credits/CreditAccountModal';
 import DebtPayoffCalculator from './components/Credits/DebtPayoffCalculator';
 import PayoffModal from './components/Credits/PayoffModal';
+import WithdrawAssetModal from './components/Credits/WithdrawAssetModal';
 
 // Budgets & Goals
 import BudgetManager from './components/Budgets/BudgetManager';
@@ -98,6 +99,7 @@ function MainApp() {
         <TransactionModal />
         <CreditAccountModal />
         <PayoffModal />
+        <WithdrawAssetModal />
       </div>
     </div>
   );
