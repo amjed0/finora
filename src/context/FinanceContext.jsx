@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import {
   INITIAL_TRANSACTIONS,
@@ -18,6 +18,36 @@ export const FinanceProvider = ({ children }) => {
   const [credits, setCredits] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [goals, setGoals] = useState([]);
+
+  // Undo / Redo history state
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+  const [undoRedoToast, setUndoRedoToast] = useState(null);
+
+  const stateRef = useRef({
+    transactions: [],
+    credits: [],
+    budgets: [],
+    goals: []
+  });
+
+  const isBatchingRef = useRef(false);
+  const isPerformingUndoRedoRef = useRef(false);
+  const lastLocalMutationTime = useRef(0);
+
+  // Keep stateRef continuously updated with present state
+  useEffect(() => {
+    stateRef.current = { transactions, credits, budgets, goals };
+  }, [transactions, credits, budgets, goals]);
+
+  // Auto-dismiss undo/redo toast notification after 2.5s
+  useEffect(() => {
+    if (!undoRedoToast) return;
+    const timer = setTimeout(() => {
+      setUndoRedoToast(null);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [undoRedoToast]);
 
   const [currency, setCurrency] = useState(() => {
     const saved = localStorage.getItem('finora_currency');
@@ -51,6 +81,8 @@ export const FinanceProvider = ({ children }) => {
   // Fetch all data from MongoDB server
   const fetchFromServer = async (userId) => {
     if (!userId) return;
+    // Don't let background poll clobber immediate local mutations or undo/redo
+    if (Date.now() - lastLocalMutationTime.current < 4000) return;
     try {
       const [dbTx, dbCredits, dbBudgets, dbGoals] = await Promise.all([
         api.getTransactions(userId).catch(() => null),
@@ -78,6 +110,8 @@ export const FinanceProvider = ({ children }) => {
 
   // Load User Data whenever currentUser changes
   useEffect(() => {
+    setPast([]);
+    setFuture([]);
     if (!currentUser) {
       setTransactions([]);
       setCredits([]);
@@ -245,8 +279,200 @@ export const FinanceProvider = ({ children }) => {
   const totalCreditUtilization = totalCreditLimit > 0 ? (totalBorrowedBalance / totalCreditLimit) * 100 : 0;
   const netBorrowLendPosition = totalLentBalance - totalBorrowedBalance;
 
+  // Diff and sync changes to server when undo/redo occurs
+  const syncDiffToServer = async (current, target) => {
+    if (!currentUser?.id) return;
+    const userId = currentUser.id;
+
+    try {
+      // 1. Transactions Diff
+      const txToRemove = current.transactions.filter(
+        (c) => !target.transactions.some((t) => (t._id || t.id) === (c._id || c.id))
+      );
+      for (const t of txToRemove) {
+        api.deleteTransaction(t._id || t.id).catch(() => {});
+      }
+      const txToAdd = target.transactions.filter(
+        (t) => !current.transactions.some((c) => (c._id || c.id) === (t._id || t.id))
+      );
+      for (const t of txToAdd) {
+        api.addTransaction(t).catch(() => {});
+      }
+      const txToUpdate = target.transactions.filter((t) => {
+        const matching = current.transactions.find((c) => (c._id || c.id) === (t._id || t.id));
+        return matching && JSON.stringify(matching) !== JSON.stringify(t);
+      });
+      for (const t of txToUpdate) {
+        api.updateTransaction(t._id || t.id, t).catch(() => {});
+      }
+
+      // 2. Credits Diff
+      const creditsToRemove = current.credits.filter(
+        (c) => !target.credits.some((t) => (t._id || t.id) === (c._id || c.id))
+      );
+      for (const c of creditsToRemove) {
+        api.deleteCredit(c._id || c.id).catch(() => {});
+      }
+      const creditsToAdd = target.credits.filter(
+        (t) => !current.credits.some((c) => (c._id || c.id) === (t._id || t.id))
+      );
+      for (const c of creditsToAdd) {
+        api.addCredit(c).catch(() => {});
+      }
+      const creditsToUpdate = target.credits.filter((t) => {
+        const matching = current.credits.find((c) => (c._id || c.id) === (t._id || t.id));
+        return matching && JSON.stringify(matching) !== JSON.stringify(t);
+      });
+      for (const c of creditsToUpdate) {
+        api.updateCredit(c._id || c.id, c).catch(() => {});
+      }
+
+      // 3. Goals Diff
+      const goalsToRemove = current.goals.filter(
+        (c) => !target.goals.some((t) => (t._id || t.id) === (c._id || c.id))
+      );
+      for (const g of goalsToRemove) {
+        api.deleteGoal(g._id || g.id).catch(() => {});
+      }
+      const goalsToAdd = target.goals.filter(
+        (t) => !current.goals.some((c) => (c._id || c.id) === (t._id || t.id))
+      );
+      for (const g of goalsToAdd) {
+        api.addGoal(g).catch(() => {});
+      }
+      const goalsToUpdate = target.goals.filter((t) => {
+        const matching = current.goals.find((c) => (c._id || c.id) === (t._id || t.id));
+        return matching && JSON.stringify(matching) !== JSON.stringify(t);
+      });
+      for (const g of goalsToUpdate) {
+        api.updateGoal(g._id || g.id, g).catch(() => {});
+      }
+
+      // 4. Budgets
+      for (const b of target.budgets) {
+        api.addBudget({ userId, category: b.category, limit: b.monthlyLimit || b.limit }).catch(() => {});
+      }
+    } catch (e) {
+      // Server sync error tolerated in local-fallback mode
+    }
+  };
+
+  // Record history snapshot before user mutations
+  const recordAction = (actionName) => {
+    if (isPerformingUndoRedoRef.current || isBatchingRef.current) {
+      return false;
+    }
+
+    lastLocalMutationTime.current = Date.now();
+
+    const snapshot = {
+      transactions: [...stateRef.current.transactions],
+      credits: [...stateRef.current.credits],
+      budgets: [...stateRef.current.budgets],
+      goals: [...stateRef.current.goals],
+      action: actionName || 'Action'
+    };
+
+    setPast((prev) => {
+      const next = [...prev, snapshot];
+      if (next.length > 30) next.shift(); // Keep maximum 30 history states
+      return next;
+    });
+    setFuture([]); // New action invalidates redo stack
+
+    isBatchingRef.current = true;
+    setTimeout(() => {
+      isBatchingRef.current = false;
+    }, 50);
+
+    return true;
+  };
+
+  // Undo last user action
+  const undo = () => {
+    if (past.length === 0) return;
+
+    isPerformingUndoRedoRef.current = true;
+    lastLocalMutationTime.current = Date.now();
+
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, -1);
+
+    const currentSnapshot = {
+      transactions: [...stateRef.current.transactions],
+      credits: [...stateRef.current.credits],
+      budgets: [...stateRef.current.budgets],
+      goals: [...stateRef.current.goals],
+      action: previous.action || 'Action'
+    };
+
+    setPast(newPast);
+    setFuture((prevFuture) => [...prevFuture, currentSnapshot]);
+
+    stateRef.current = {
+      transactions: previous.transactions,
+      credits: previous.credits,
+      budgets: previous.budgets,
+      goals: previous.goals
+    };
+
+    setTransactions(previous.transactions);
+    setCredits(previous.credits);
+    setBudgets(previous.budgets);
+    setGoals(previous.goals);
+
+    syncDiffToServer(currentSnapshot, previous);
+    setUndoRedoToast(`Undone: ${previous.action || 'last action'}`);
+
+    setTimeout(() => {
+      isPerformingUndoRedoRef.current = false;
+    }, 100);
+  };
+
+  // Redo last undone action
+  const redo = () => {
+    if (future.length === 0) return;
+
+    isPerformingUndoRedoRef.current = true;
+    lastLocalMutationTime.current = Date.now();
+
+    const next = future[future.length - 1];
+    const newFuture = future.slice(0, -1);
+
+    const currentSnapshot = {
+      transactions: [...stateRef.current.transactions],
+      credits: [...stateRef.current.credits],
+      budgets: [...stateRef.current.budgets],
+      goals: [...stateRef.current.goals],
+      action: next.action || 'Action'
+    };
+
+    setFuture(newFuture);
+    setPast((prevPast) => [...prevPast, currentSnapshot]);
+
+    stateRef.current = {
+      transactions: next.transactions,
+      credits: next.credits,
+      budgets: next.budgets,
+      goals: next.goals
+    };
+
+    setTransactions(next.transactions);
+    setCredits(next.credits);
+    setBudgets(next.budgets);
+    setGoals(next.goals);
+
+    syncDiffToServer(currentSnapshot, next);
+    setUndoRedoToast(`Redone: ${next.action || 'action'}`);
+
+    setTimeout(() => {
+      isPerformingUndoRedoRef.current = false;
+    }, 100);
+  };
+
   // Actions
   const addTransaction = async (txData) => {
+    recordAction(txData.description ? `Added: ${txData.description}` : 'Added transaction');
     const userId = currentUser?.id || 'default_user';
     const newTx = {
       ...txData,
@@ -276,6 +502,7 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateTransaction = async (id, txData) => {
+    recordAction(txData.description ? `Edited: ${txData.description}` : 'Edited transaction');
     setTransactions((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...txData, amount: parseFloat(txData.amount) } : t))
     );
@@ -288,6 +515,8 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const deleteTransaction = async (id) => {
+    const tx = stateRef.current.transactions.find((t) => t.id === id);
+    recordAction(tx?.description ? `Deleted: ${tx.description}` : 'Deleted transaction');
     setTransactions((prev) => prev.filter((t) => t.id !== id));
 
     try {
@@ -299,6 +528,7 @@ export const FinanceProvider = ({ children }) => {
 
   const addCreditAccount = async (creditData) => {
     const userId = currentUser?.id || 'default_user';
+    recordAction(creditData.name ? `Added account: ${creditData.name}` : 'Added account');
     const newCredit = {
       ...creditData,
       userId,
@@ -362,6 +592,7 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateCreditAccount = async (id, creditData) => {
+    recordAction(creditData.name ? `Edited account: ${creditData.name}` : 'Edited account');
     const updatedObj = {
       ...creditData,
       category: creditData.category || 'borrowing',
@@ -421,6 +652,7 @@ export const FinanceProvider = ({ children }) => {
   const deleteCreditAccount = async (id) => {
     // Remove the auto-generated linked transaction when credit is deleted
     const creditToDelete = credits.find((c) => c.id === id);
+    recordAction(creditToDelete?.name ? `Deleted account: ${creditToDelete.name}` : 'Deleted account');
     if (creditToDelete?.category === 'borrowing') {
       const linkedTx = transactions.find(
         (t) => t.linkedCreditId === id && t.category === 'debt_received'
@@ -447,6 +679,7 @@ export const FinanceProvider = ({ children }) => {
     const payAmt = parseFloat(amount);
     const targetCredit = credits.find((c) => c.id === creditId);
     if (!targetCredit) return;
+    recordAction(`Payment to ${targetCredit.name}`);
 
     const isLending = targetCredit.category === 'lending';
     const isChitty = targetCredit.category === 'chitty';
@@ -546,6 +779,7 @@ export const FinanceProvider = ({ children }) => {
   const setBudgetLimit = async (category, limit) => {
     const userId = currentUser?.id || 'default_user';
     const numLimit = parseFloat(limit);
+    recordAction(`Budget: ${category}`);
 
     setBudgets((prev) => {
       const exists = prev.find((b) => b.category === category);
@@ -564,6 +798,7 @@ export const FinanceProvider = ({ children }) => {
 
   const addGoal = async (goalData) => {
     const userId = currentUser?.id || 'default_user';
+    recordAction(goalData.name ? `Added goal: ${goalData.name}` : 'Added goal');
     const newGoal = {
       ...goalData,
       userId,
@@ -588,6 +823,7 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const updateGoal = async (id, goalData) => {
+    recordAction(goalData.name ? `Edited goal: ${goalData.name}` : 'Edited goal');
     const updated = {
       ...goalData,
       targetAmount: parseFloat(goalData.targetAmount),
@@ -615,6 +851,8 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const deleteGoal = async (id) => {
+    const g = stateRef.current.goals.find((g) => g.id === id);
+    recordAction(g?.name ? `Deleted goal: ${g.name}` : 'Deleted goal');
     setGoals((prev) => prev.filter((g) => g.id !== id));
 
     try {
@@ -625,6 +863,7 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const loadDemoData = () => {
+    recordAction('Loaded demo data');
     setTransactions(INITIAL_TRANSACTIONS);
     setCredits(INITIAL_CREDITS);
     setBudgets(INITIAL_BUDGETS);
@@ -632,6 +871,7 @@ export const FinanceProvider = ({ children }) => {
   };
 
   const clearAllData = () => {
+    recordAction('Cleared all data');
     setTransactions([]);
     setCredits([]);
     setBudgets([]);
@@ -678,6 +918,13 @@ export const FinanceProvider = ({ children }) => {
         totalCreditLimit,
         totalCreditUtilization,
         formatCurrency,
+
+        // Undo / Redo
+        undo,
+        redo,
+        canUndo: past.length > 0,
+        canRedo: future.length > 0,
+        undoRedoToast,
 
         // Actions
         addTransaction,

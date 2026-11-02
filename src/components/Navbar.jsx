@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { useAuth } from '../context/AuthContext';
 import { CURRENCIES } from '../constants/initialData';
-import { Sun, Moon, Plus, Wallet, LogOut, User, ChevronDown, Settings } from 'lucide-react';
+import { Sun, Moon, Plus, Wallet, LogOut, User, ChevronDown, Settings, Undo2, Redo2 } from 'lucide-react';
 
 export default function Navbar() {
   const {
@@ -13,12 +13,35 @@ export default function Navbar() {
     theme,
     setTheme,
     setIsTxModalOpen,
-    setEditingTx
+    setEditingTx,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    undoRedoToast
   } = useFinance();
 
   const { currentUser, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef(null);
+
+  // Keyboard shortcut: Ctrl+Z / Cmd+Z for undo, Ctrl+Y / Ctrl+Shift+Z for redo
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const isMac = navigator.platform?.toUpperCase().includes('MAC');
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+      if (!modifier) return;
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   // Close profile dropdown when clicking or touching anywhere outside
   useEffect(() => {
@@ -80,6 +103,25 @@ export default function Navbar() {
       </div>
 
       <div className="top-header-actions">
+        {/* Undo / Redo Buttons */}
+        <button
+          className="btn btn-secondary btn-icon"
+          onClick={undo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: canUndo ? 1 : 0.35, cursor: canUndo ? 'pointer' : 'not-allowed' }}
+        >
+          <Undo2 size={17} />
+        </button>
+        <button
+          className="btn btn-secondary btn-icon"
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Y)"
+          style={{ opacity: canRedo ? 1 : 0.35, cursor: canRedo ? 'pointer' : 'not-allowed' }}
+        >
+          <Redo2 size={17} />
+        </button>
         {/* Currency Switcher Dropdown */}
         <select
           value={currency.code}
@@ -262,6 +304,36 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      {/* Undo / Redo Toast Notification */}
+      {undoRedoToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '90px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '10px 18px',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+            boxShadow: 'var(--shadow-lg)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'fadeIn 0.2s ease-out',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none'
+          }}
+        >
+          <span style={{ color: '#8b5cf6' }}>↩</span>
+          {undoRedoToast}
+        </div>
+      )}
     </header>
   );
 }
